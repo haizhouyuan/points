@@ -224,3 +224,63 @@ For structured development, use the **Spec Workflow** system in `.claude/`:
 - `.claude/workflows/spec-workflow.md` - Structured development process
 - `.claude/agents/test-case-designer.md` - Comprehensive testing strategy
 - `.claude/agents/aliyun-devops-deployer.md` - Production deployment automation
+
+## Claude Code Sub-Agent Guidelines
+
+> Think carefully and implement the most concise solution that changes as little code as possible.
+
+### Context Optimization with Sub-Agents
+
+#### 1. File Analysis
+Always use the file-analyzer sub-agent when asked to read files. This agent extracts and summarizes critical information from files, particularly log files and verbose outputs, providing concise summaries while dramatically reducing context usage.
+
+#### 2. Code Analysis
+Always use the code-analyzer sub-agent when asked to search code, analyze code, research bugs, or trace logic flow. This agent provides concise, actionable summaries while preserving essential information.
+
+#### 3. Test Execution
+Always use the test-runner sub-agent to run tests and analyze results. This ensures:
+- Full test output capture for debugging
+- Clean main conversation focus
+- Optimized context usage
+- Proper issue surfacing
+- No approval dialog interruptions
+
+## Development Philosophy
+
+### Error Handling Strategy
+- **Fail fast** for critical configuration (missing text model)
+- **Log and continue** for optional features (extraction model)  
+- **Graceful degradation** when external services unavailable
+- **User-friendly messages** through resilience layer
+
+### Testing Approach
+- Always use the test-runner agent to execute tests
+- Do not use mock services for anything ever
+- Do not move on to the next test until the current test is complete
+- If test fails, check test structure before refactoring codebase
+- Tests must be verbose for debugging purposes
+
+## Code Quality Standards
+
+### Communication Style
+- Criticism is welcome - point out errors or better approaches
+- Reference relevant standards or conventions when applicable
+- Be skeptical and ask clarifying questions when in doubt
+- Be concise - short summaries preferred over extended breakdowns
+- No flattery or compliments unless specifically requested
+
+### ABSOLUTE RULES
+
+**Implementation Standards:**
+- NO PARTIAL IMPLEMENTATION
+- NO SIMPLIFICATION with "//This is simplified..." comments
+- NO CODE DUPLICATION - reuse existing functions and constants
+- NO DEAD CODE - either use or delete completely
+- IMPLEMENT TESTS FOR EVERY FUNCTION
+- NO CHEATER TESTS - tests must be accurate and reveal flaws
+
+**Code Organization:**
+- NO INCONSISTENT NAMING - follow existing codebase patterns
+- NO OVER-ENGINEERING - avoid unnecessary abstractions when simple functions work
+- NO MIXED CONCERNS - proper separation of validation, API, database, UI logic
+- NO RESOURCE LEAKS - close connections, clear timeouts, remove listeners

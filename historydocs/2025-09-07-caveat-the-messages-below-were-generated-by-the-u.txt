@@ -1,0 +1,1235 @@
+╭───────────────────────────────────────────────────╮
+│ ✻ Welcome to Claude Code!                         │
+│                                                   │
+│   /help for help, /status for your current setup  │
+│                                                   │
+│   cwd: D:\points                                  │
+╰───────────────────────────────────────────────────╯
+
+> /model 
+  ⎿  Set model to opusplan (claude-opus-4-1-20250805)
+
+> /model 
+  ⎿  Set model to opusplan (claude-opus-4-1-20250805)
+
+> hello
+
+● Hello! I'm Claude Code, ready to help with your software engineering tasks. How can I assist you today?
+
+> which model are you
+
+● I'm powered by Opus 4.1, specifically the model ID claude-opus-4-1-20250805.
+
+> /re-init is running… 
+  ⎿  Allowed 4 tools for this command
+
+● I'll help you enhance the CLAUDE.md file with rules from .claude/CLAUDE.md. Let me first check if CLAUDE.md exists and
+  then examine the .claude/CLAUDE.md file.
+
+● Read(CLAUDE.md)
+  ⎿  Read 226 lines (ctrl+r to expand)
+
+● Now let me check if there's a .claude/CLAUDE.md file to see what additional rules need to be incorporated:
+
+● Read(.claude\CLAUDE.md)
+  ⎿  Read 66 lines (ctrl+r to expand)
+  ⎿  .claude\CLAUDE.md
+
+● Perfect! I can see that the main CLAUDE.md file already exists and contains comprehensive project-specific guidance. Now I
+   need to enhance it by adding the additional rules from .claude/CLAUDE.md. I'll append the new sections to the existing
+  CLAUDE.md file.
+
+● Update(CLAUDE.md)
+  ⎿  Updated CLAUDE.md with 61 additions and 1 removal                                                                
+       223    **Key Files**:
+       224    - `.claude/workflows/spec-workflow.md` - Structured development process
+       225    - `.claude/agents/test-case-designer.md` - Comprehensive testing strategy
+       226 -  - `.claude/agents/aliyun-devops-deployer.md` - Production deployment automation
+       226   \ No newline at end of file
+       227 +  - `.claude/agents/aliyun-devops-deployer.md` - Production deployment automation
+       228 +  
+       229 +  ## Claude Code Sub-Agent Guidelines
+       230 +  
+       231 +  > Think carefully and implement the most concise solution that changes as little code as possible.
+       232 +  
+       233 +  ### Context Optimization with Sub-Agents
+       234 +  
+       235 +  #### 1. File Analysis
+       236 +  Always use the file-analyzer sub-agent when asked to read files. This agent extracts and summarizes 
+           + critical information from files, particularly log files and verbose outputs, providing concise summaries 
+           + while dramatically reducing context usage.
+       237 +  
+       238 +  #### 2. Code Analysis
+       239 +  Always use the code-analyzer sub-agent when asked to search code, analyze code, research bugs, or trace 
+           + logic flow. This agent provides concise, actionable summaries while preserving essential information.
+       240 +  
+       241 +  #### 3. Test Execution
+       242 +  Always use the test-runner sub-agent to run tests and analyze results. This ensures:
+       243 +  - Full test output capture for debugging
+       244 +  - Clean main conversation focus
+       245 +  - Optimized context usage
+       246 +  - Proper issue surfacing
+       247 +  - No approval dialog interruptions
+       248 +  
+       249 +  ## Development Philosophy
+       250 +  
+       251 +  ### Error Handling Strategy
+       252 +  - **Fail fast** for critical configuration (missing text model)
+       253 +  - **Log and continue** for optional features (extraction model)  
+       254 +  - **Graceful degradation** when external services unavailable
+       255 +  - **User-friendly messages** through resilience layer
+       256 +  
+       257 +  ### Testing Approach
+       258 +  - Always use the test-runner agent to execute tests
+       259 +  - Do not use mock services for anything ever
+       260 +  - Do not move on to the next test until the current test is complete
+       261 +  - If test fails, check test structure before refactoring codebase
+       262 +  - Tests must be verbose for debugging purposes
+       263 +  
+       264 +  ## Code Quality Standards
+       265 +  
+       266 +  ### Communication Style
+       267 +  - Criticism is welcome - point out errors or better approaches
+       268 +  - Reference relevant standards or conventions when applicable
+       269 +  - Be skeptical and ask clarifying questions when in doubt
+       270 +  - Be concise - short summaries preferred over extended breakdowns
+       271 +  - No flattery or compliments unless specifically requested
+       272 +  
+       273 +  ### ABSOLUTE RULES
+       274 +  
+       275 +  **Implementation Standards:**
+       276 +  - NO PARTIAL IMPLEMENTATION
+       277 +  - NO SIMPLIFICATION with "//This is simplified..." comments
+       278 +  - NO CODE DUPLICATION - reuse existing functions and constants
+       279 +  - NO DEAD CODE - either use or delete completely
+       280 +  - IMPLEMENT TESTS FOR EVERY FUNCTION
+       281 +  - NO CHEATER TESTS - tests must be accurate and reveal flaws
+       282 +  
+       283 +  **Code Organization:**
+       284 +  - NO INCONSISTENT NAMING - follow existing codebase patterns
+       285 +  - NO OVER-ENGINEERING - avoid unnecessary abstractions when simple functions work
+       286 +  - NO MIXED CONCERNS - proper separation of validation, API, database, UI logic
+       287 +  - NO RESOURCE LEAKS - close connections, clear timeouts, remove listeners
+       288   \ No newline at end of file
+
+● Perfect! I've successfully enhanced the CLAUDE.md file by integrating the rules from .claude/CLAUDE.md. The updated file
+  now includes:
+
+  New Sections Added:
+  1. Claude Code Sub-Agent Guidelines - Instructions for using specialized sub-agents for context optimization
+  2. Development Philosophy - Error handling strategy and testing approach
+  3. Code Quality Standards - Communication style and absolute implementation rules
+
+  The enhancement preserves all the original project-specific content while adding the important development guidelines from
+   .claude/CLAUDE.md. The file now provides comprehensive guidance covering:
+
+  - Project overview and tech stack
+  - Development commands and testing
+  - Architecture and deployment procedures
+  - Sub-agent usage for optimal context management
+  - Strict code quality and implementation standards
+
+  The CLAUDE.md file is now complete with both project-specific guidance and general development rules.
+
+> 我从figma的导入了设计稿，现在需要开发api清单然后开发后端，你看看我应该用什么流程，什么子代理，先别做计划，先帮我出主意
+
+● 我来帮你分析从Figma设计稿到后端API开发的最佳流程和子代理选择。
+
+  让我先看看你的项目结构和现有的设计稿情况：
+
+● List(D:/points)
+  ⎿  Listed 93 paths (ctrl+r to expand)
+
+● Read(src\guidelines\Guidelines.md)
+  ⎿  Read 431 lines (ctrl+r to expand)
+
+● Search(pattern: "**/*figma*")
+  ⎿  Found 0 files 
+
+● List(src\components)
+  ⎿  Listed 78 paths (ctrl+r to expand)
+
+● 基于我对你的项目分析，这是一个非常成熟的暑期规划应用，已经有完整的前端组件库。现在你需要从Figma设计稿开发后端API。以下是我
+  的建议：
+
+  🎯 推荐流程与子代理选择
+
+  第一阶段：设计稿分析与API规划
+
+  推荐子代理: general-purpose
+  - 用途: 分析Figma设计稿，识别数据结构和API需求
+  - 为什么: 它有完整的工具集，可以搜索、分析、规划复杂的多步骤任务
+
+  第二阶段：API清单生成
+
+  推荐子代理: file-analyzer + code-analyzer
+  - file-analyzer: 分析现有前端组件，提取API需求
+  - code-analyzer: 分析现有数据模型和业务逻辑，确保API一致性
+  - 为什么: 你已有丰富的前端组件，需要深度分析它们的数据需求
+
+  第三阶段：后端开发
+
+  推荐子代理: general-purpose
+  - 用途: 实际的后端代码开发
+  - 为什么: 需要完整工具集来创建、编辑、测试后端代码
+
+  第四阶段：测试验证
+
+  推荐子代理: test-runner
+  - 用途: 运行后端API测试，验证功能正确性
+  - 为什么: 专门优化的测试执行和分析
+
+  🔍 具体建议
+
+  优先级1: 数据分析
+
+  你的前端已经非常完善，有28个主要组件，应该：
+  1. 先分析现有组件的数据需求，而不是从Figma重新开始
+  2. 重点关注: AchievementSystem、AnalyticsDashboard、FamilyCollaboration等核心组件
+  3. 识别数据实体: users, tasks, achievements, families, notifications等
+
+  优先级2: API分类
+
+  根据你的组件，API应该分为：
+  - 用户认证: 登录/注册/家庭管理
+  - 任务系统: 任务CRUD/进度追踪
+  - 游戏化: 积分/经验/成就/连击
+  - 社交: 家庭互动/通知/排行榜
+  - 数据分析: 统计/预测/洞察
+
+  优先级3: 数据库设计
+
+  基于你的Guidelines.md，已经明确了：
+  - MongoDB作为数据库
+  - 已有用户角色、任务分类、状态定义
+  - 需要确保与现有前端数据结构对齐
+
+  ❓ 关键问题
+
+  1. 你的Figma设计稿具体在哪里？是新的设计还是对现有功能的调整？
+  2. 后端技术栈确定了吗？看起来应该是Node.js + Express + MongoDB
+  3. 是否需要实时功能？比如家庭协作、通知推送等
+  4. 认证方式？JWT还是其他方案？
+
+  建议先用code-analyzer子代理深度分析你现有的28个组件，提取完整的API需求清单，然后再决定具体的开发策略。这样可以确保后端API
+  与前端完美契合。
+
+  你觉得这个思路如何？需要我详细制定具体的实施计划吗？
+
+> 先用code-analyzer子代理深度分析你现有的28个组件，提取完整的API需求清单，然后再决定具体的开发策略。这样可以确保后端API     
+    与前端完美契合 ultrathink
+
+✻ Thinking…
+
+  用户同意了我的建议，想要使用code-analyzer子代理来深度分析现有的28个组件，提取完整的API需求清单。由于我处于plan 
+  mode，我需要制定一个详细的计划来完成这个任务。
+
+  让我制定一个结构化的计划：
+
+  1. 使用code-analyzer子代理分析现有的28个前端组件
+  2. 提取每个组件的数据需求和API调用需求  
+  3. 整理成完整的API需求清单
+  4. 根据API清单设计后端架构
+  5. 制定后端开发策略
+
+  这是一个非常合理的计划，因为：
+  - 现有前端组件已经很成熟，包含了完整的业务逻辑
+  - 通过分析现有组件，可以确保API与前端完美契合
+  - code-analyzer专门擅长代码分析和逻辑追踪
+  - 这种自底向上的方法比从Figma重新设计更高效
+
+  让我调用ExitPlanMode工具来呈现这个计划。
+
+● 完全赞同！这是最务实的方法。让我制定一个详细的计划来深度分析你现有的28个组件，提取完整的API需求清单。
+                                                      
+●User approved Claude's plan:
+  ⎿  🎯 前端组件深度分析 → API需求清单 → 后端开发策略
+     
+     Phase 1: 组件深度分析 (code-analyzer)
+     
+     目标: 分析28个现有组件，提取数据模型和API调用需求
+     
+     1.1 核心游戏化组件分析
+     
+     - AchievementSystem.tsx - 成就系统API需求
+     - ExperienceSystem.tsx - 经验值系统API
+     - LifeSystem.tsx - 生命值系统API  
+     - StreakSystem.tsx - 连击系统API
+     - SkillTree.tsx - 技能树系统API
+     
+     1.2 任务管理组件分析
+     
+     - TaskPlanning.tsx - 任务规划API
+     - TaskCalendar.tsx - 日历任务API
+     - TaskHistory.tsx - 历史记录API
+     - TaskLibrary.tsx - 任务库API
+     - HabitTracker.tsx - 习惯追踪API
+     
+     1.3 社交协作组件分析
+     
+     - FamilyCollaboration.tsx - 家庭协作API
+     - SocialInteraction.tsx - 社交互动API
+     - NotificationCenter.tsx - 通知系统API
+     - FamilyLeaderboard.tsx - 排行榜API
+     
+     1.4 数据分析组件分析
+     
+     - AnalyticsDashboard.tsx - 数据分析API
+     - SmartRecommendations.tsx - 智能推荐API
+     - ParentDashboard.tsx - 家长面板API
+     
+     Phase 2: API需求清单整理
+     
+     目标: 将组件分析结果整理成结构化API清单
+     
+     2.1 API分类归纳
+     
+     - 认证授权类API
+     - 用户管理类API  
+     - 任务系统类API
+     - 游戏化系统类API
+     - 社交协作类API
+     - 数据分析类API
+     - 通知推送类API
+     
+     2.2 数据实体建模
+     
+     - 基于组件需求定义数据库schema
+     - 确定实体关系和约束条件
+     - 设计索引策略
+     
+     Phase 3: 后端架构设计
+     
+     目标: 基于API清单设计最优后端架构
+     
+     3.1 技术栈确认
+     
+     - Node.js + Express + TypeScript
+     - MongoDB + Mongoose
+     - JWT认证 + Socket.io实时通信
+     
+     3.2 项目结构设计
+     
+     - RESTful API设计规范
+     - 中间件架构
+     - 错误处理机制
+     - 测试策略
+     
+     Phase 4: 开发优先级排序
+     
+     目标: 确定API开发的先后顺序
+     
+     4.1 MVP核心API (第一优先级)
+     
+     - 用户认证和基础用户管理
+     - 任务CRUD和基础游戏化
+     
+     4.2 增强功能API (第二优先级)
+     
+     - 社交协作和通知系统
+     - 数据分析和智能推荐
+     
+     预期产出
+     
+     1. 详细API规格文档 - 包含所有端点、参数、响应格式
+     2. 数据库设计文档 - 完整的schema和关系设计
+     3. 后端开发路线图 - 分阶段的开发计划和时间估算
+     4. 与现有前端的完美契合验证 - 确保零重构对接
+
+✻ Thinking…
+
+  用户已经批准了我的计划，现在可以开始编码了。我需要首先使用TodoWrite工具来创建和管理任务列表，然后开始执行计划。
+  
+  按照计划，我需要：
+  1. 创建todo列表来跟踪任务
+  2. 使用code-analyzer子代理深度分析现有的28个组件
+  3. 提取API需求并整理成清单
+  4. 设计后端架构
+  
+  让我从创建todo列表开始：
+
+● Perfect! 计划已获批准，让我开始执行。首先创建任务跟踪列表，然后使用code-analyzer子代理深度分析现有组件。
+
+✻ Thinking…
+
+  现在我需要开始分析核心游戏化组件。让我使用code-analyzer子代理来深度分析这些组件：AchievementSystem, ExperienceSystem, 
+  LifeSystem, StreakSystem, SkillTree。
+
+  我需要给code-analyzer一个详细的任务描述，让它分析这些组件的数据结构、API调用需求、状态管理等。
+
+● 现在开始第一阶段的分析。让我使用code-analyzer子代理深度分析核心游戏化组件，提取它们的API需求。
+
+● code-analyzer(分析游戏化组件API需求)
+  ⎿  Done (10 tool uses · 46.5k tokens · 1m 50.9s)                                                                         
+
+✻ Thinking…
+
+  非常好！code-analyzer子代理提供了非常详细的分析。现在让我完成第一个任务并开始第二个任务 - 
+  分析任务管理组件。我需要先标记第一个任务为完成，然后开始下一个任务。
+
+● 优秀！code-analyzer提供了非常详细的游戏化组件分析。现在让我继续分析任务管理组件。
+
+✻ Thinking…
+
+  现在我需要继续使用code-analyzer来分析任务管理组件。让我分析TaskPlanning, TaskCalendar, TaskHistory, TaskLibrary, 
+  HabitTracker这5个组件。
+
+● code-analyzer(分析任务管理组件API需求)
+  ⎿  Done (18 tool uses · 43.5k tokens · 4m 45.2s)                                                                         
+
+✻ Thinking…
+
+  太棒了！现在我已经完成了任务管理组件的分析。让我继续分析社交协作组件，然后是数据分析组件。我需要更新todo列表并继续下一个任务。
+
+● 优秀的任务管理组件分析！现在继续分析社交协作组件。
+
+✻ Thinking…
+
+  现在我需要分析社交协作组件。这些组件包括FamilyCollaboration, SocialInteraction, NotificationCenter, 
+  FamilyLeaderboard。这些组件涉及实时通信、家庭成员互动、通知推送等复杂功能。
+
+● code-analyzer(分析社交协作组件API需求)
+  ⎿  Done (8 tool uses · 46.0k tokens · 1m 26.0s)                                                                          
+
+✻ Thinking…
+
+  很好，现在我已经完成了社交协作组件的分析。接下来需要分析最后一组组件：数据分析组件（AnalyticsDashboard, SmartRecommendations, 
+  ParentDashboard）。然后就可以整理所有的API需求清单了。
+
+● 优秀的社交协作组件分析！现在分析最后一组数据分析组件。
+
+✻ Thinking…
+
+  现在我需要分析最后一组数据分析组件：AnalyticsDashboard, SmartRecommendations, 
+  ParentDashboard。这些组件涉及大数据分析、机器学习推荐、复杂的统计计算等功能。
+
+● code-analyzer(分析数据分析组件API需求)
+  ⎿  Done (6 tool uses · 35.7k tokens · 1m 25.5s)                                                                          
+
+✻ Thinking…
+
+  很好！现在我已经完成了所有4组组件的分析：
+  
+  1. ✅ 核心游戏化组件 (AchievementSystem, ExperienceSystem, LifeSystem, StreakSystem, SkillTree)
+  2. ✅ 任务管理组件 (TaskPlanning, TaskCalendar, TaskHistory, TaskLibrary, HabitTracker)
+  3. ✅ 社交协作组件 (FamilyCollaboration, SocialInteraction, NotificationCenter, FamilyLeaderboard)
+  4. ✅ 数据分析组件 (AnalyticsDashboard, SmartRecommendations, ParentDashboard)
+  
+  code-analyzer还发现了一些潜在的性能和安全问题，这非常有价值。
+  
+  现在我需要开始整理API需求清单并进行分类归纳。这是一个非常重要的步骤，因为我需要将所有这些分散的API需求整合成一个结构化的清单。
+
+✻ Thinking…
+
+  优秀！现在我需要整理所有分析结果，将来自4组组件的API需求进行分类归纳。这是一个重要的综合整理工作，需要我把所有信息整合成一个结
+  构化的API需求清单。
+
+  基于前面的分析，我需要按照以下维度来归纳：
+
+  1. 按业务域分类：
+    - 用户认证与权限
+    - 游戏化系统
+    - 任务管理系统
+    - 社交协作系统
+    - 数据分析与智能推荐
+    - 通知系统
+  2. 按技术需求分类：
+    - RESTful API
+    - WebSocket实时通信
+    - 机器学习/AI算法
+    - 数据分析与统计
+    - 文件上传与处理
+    - 缓存策略
+  3. 按开发优先级分类：
+    - MVP核心功能（第一优先级）
+    - 增强功能（第二优先级）
+    - 高级功能（第三优先级）
+
+  让我开始整理这个综合API需求清单。
+
+● 📋 完整API需求清单整理与分类
+
+  现在将前面分析的所有API需求整理成结构化清单：
+
+  🏗️ API架构总览
+
+  基于对17个组件的深度分析，总结出87个核心API端点和23个WebSocket事件，涵盖6大业务域：
+
+  🎯 按业务域分类
+
+  1. 认证权限系统 (Auth & Permission)
+
+  // 基础认证
+  POST   /api/auth/register              // 用户注册
+  POST   /api/auth/login                 // 用户登录  
+  POST   /api/auth/logout                // 登出
+  POST   /api/auth/refresh-token         // 刷新token
+
+  // 家庭管理
+  POST   /api/families                   // 创建家庭
+  POST   /api/families/:id/invite        // 邀请成员
+  PUT    /api/families/:id/members/:uid/role // 更新成员角色
+  GET    /api/families/:id/members       // 获取家庭成员
+
+  // 权限控制
+  GET    /api/permissions/user/:id       // 获取用户权限
+  POST   /api/permissions/validate       // 权限验证
+
+  2. 游戏化系统 (Gamification)
+
+  // 积分经验系统
+  GET    /api/users/:id/points           // 获取用户积分
+  POST   /api/users/:id/points/add       // 添加积分
+  GET    /api/experience/:id             // 获取经验数据
+  POST   /api/experience/:id/add         // 添加经验值
+
+  // 成就系统  
+  GET    /api/achievements/:id           // 获取用户成就
+  POST   /api/achievements/:id/unlock    // 解锁成就
+  POST   /api/achievements/:id/claim     // 领取奖励
+
+  // 连击系统
+  GET    /api/streaks/:id                // 获取连击数据
+  POST   /api/streaks/:id/update         // 更新连击
+  POST   /api/streaks/:id/restore        // 修复连击
+
+  // 生命值系统
+  GET    /api/life/:id                   // 获取生命值
+  POST   /api/life/:id/consume           // 消耗生命值
+  POST   /api/life/:id/buy               // 购买生命值
+
+  // 技能树系统
+  GET    /api/skills/:id                 // 获取技能数据
+  POST   /api/skills/:id/:skillId/unlock // 解锁技能
+  POST   /api/skills/:id/task/:taskId/complete // 完成技能任务
+
+  3. 任务管理系统 (Task Management)
+
+  // 任务模板库
+  GET    /api/task-templates             // 获取任务模板
+  POST   /api/task-templates             // 创建模板
+  GET    /api/task-templates/search      // 搜索任务
+  GET    /api/task-templates/recommended // 推荐任务
+
+  // 计划任务
+  POST   /api/scheduled-tasks            // 创建计划任务
+  PUT    /api/scheduled-tasks/:id        // 更新任务
+  PATCH  /api/scheduled-tasks/:id/complete // 标记完成
+  GET    /api/scheduled-tasks/date/:date // 按日期查询
+
+  // 日历管理
+  GET    /api/calendar/tasks/:year/:month // 获取月度任务
+  POST   /api/calendar/schedule-task     // 调度任务
+  PATCH  /api/calendar/reschedule/:id    // 重新调度
+
+  // 历史记录
+  GET    /api/task-history               // 获取历史记录
+  GET    /api/task-history/stats         // 完成统计
+  GET    /api/task-history/streak-stats  // 连击统计
+
+  // 习惯追踪
+  GET    /api/habits/streaks             // 获取习惯连击
+  POST   /api/habits/streaks/:category   // 更新习惯连击
+  GET    /api/habits/milestones          // 获取里程碑
+
+  4. 社交协作系统 (Social & Collaboration)
+
+  // 家庭协作
+  POST   /api/tasks/collaborative        // 创建协作任务
+  PUT    /api/tasks/:id/join             // 加入任务
+  PUT    /api/tasks/:id/progress         // 更新进度
+  POST   /api/challenges/family          // 创建家庭挑战
+
+  // 社交互动
+  GET    /api/social/posts/timeline      // 获取动态时间线
+  POST   /api/social/posts               // 发布动态
+  POST   /api/social/posts/:id/like      // 点赞
+  POST   /api/social/posts/:id/comment   // 评论
+  POST   /api/social/encouragements      // 发送鼓励
+
+  // 排行榜
+  GET    /api/family/leaderboard         // 家庭排行榜
+  GET    /api/family/leaderboard/stats   // 排行统计
+  PUT    /api/family/members/:id/points  // 更新积分
+
+  // 通知系统
+  GET    /api/notifications              // 获取通知列表
+  PUT    /api/notifications/:id/read     // 标记已读
+  PUT    /api/notifications/read-all     // 全部已读
+  GET    /api/notifications/settings     // 通知设置
+
+  5. 数据分析与智能推荐 (Analytics & ML)
+
+  // 数据分析
+  GET    /api/analytics/overview         // 数据概览
+  GET    /api/analytics/time-series      // 时序分析
+  GET    /api/analytics/categories/performance // 分类表现
+  GET    /api/analytics/skills/assessment // 技能评估
+  GET    /api/analytics/predictions      // 预测分析
+
+  // 智能推荐
+  POST   /api/ml/recommendations/generate // 生成推荐
+  POST   /api/ml/recommendations/feedback // 推荐反馈
+  GET    /api/ml/user-profile            // 用户画像
+  POST   /api/ml/model/retrain           // 模型训练
+
+  // 家长面板
+  GET    /api/parent/approvals/pending   // 待审批事项
+  POST   /api/parent/approvals/:id/approve // 审批通过
+  POST   /api/parent/approvals/:id/reject  // 审批拒绝
+  GET    /api/parent/family/analytics    // 家庭分析
+  POST   /api/parent/child/:id/restrictions // 设置限制
+
+  6. 文件与媒体系统 (Media & Files)
+
+  // 文件上传
+  POST   /api/files/upload               // 文件上传
+  GET    /api/files/:id                  // 获取文件
+  DELETE /api/files/:id                  // 删除文件
+
+  // 头像系统  
+  GET    /api/avatars/:id/customization  // 获取头像定制
+  PUT    /api/avatars/:id/update         // 更新头像
+  POST   /api/avatars/:id/unlock-item    // 解锁道具
+
+  // 任务证据
+  POST   /api/scheduled-tasks/:id/evidence // 上传任务证据
+  GET    /api/evidence/:id               // 获取证据文件
+
+  ⚡ WebSocket实时事件
+
+  // 游戏化事件
+  'achievement:unlocked'        // 成就解锁
+  'experience:level_up'         // 等级提升
+  'streak:milestone'            // 连击里程碑
+  'celebration:trigger'         // 庆祝动画
+
+  // 任务事件
+  'task:completed'              // 任务完成
+  'task:progress_update'        // 进度更新
+  'task:participant_joined'     // 成员加入
+
+  // 社交事件
+  'social:new_post'             // 新动态
+  'social:post_liked'           // 动态点赞
+  'social:encouragement_sent'   // 收到鼓励
+  'social:member_online'        // 成员上线
+
+  // 通知事件
+  'notification:new'            // 新通知
+  'notification:batch_update'   // 批量更新
+
+  // 排行榜事件
+  'leaderboard:points_update'   // 积分更新
+  'leaderboard:rank_change'     // 排名变化
+
+  🚀 按开发优先级分类
+
+  MVP核心功能 (第一优先级) - 4周
+
+  // 必须功能 - 无此功能应用无法正常运行
+  - 用户认证系统 (注册/登录/权限)
+  - 基础任务管理 (创建/完成/历史)
+  - 核心游戏化 (积分/经验/等级)
+  - 基础通知系统
+
+  增强功能 (第二优先级) - 6周
+
+  // 核心功能增强 - 显著提升用户体验
+  - 成就系统和连击系统
+  - 家庭社交和协作任务
+  - 习惯追踪和日历集成
+  - 排行榜和基础数据分析
+
+  高级功能 (第三优先级) - 8周
+
+  // 差异化功能 - 产品竞争力
+  - AI智能推荐系统
+  - 深度数据分析面板
+  - 高级社交互动功能
+  - 家长管理和控制面板
+
+  📊 技术架构建议
+
+  数据库设计
+
+  - MongoDB主库: 业务数据存储
+  - Redis缓存: 实时数据和会话管理
+  - InfluxDB时序库: 数据分析和统计
+  - MinIO文件存储: 媒体文件和头像
+
+  微服务架构
+
+  - 用户服务: 认证、权限、用户管理
+  - 任务服务: 任务管理、日历、历史
+  - 游戏化服务: 积分、经验、成就、技能
+  - 社交服务: 动态、互动、通知、排行榜
+  - 分析服务: 数据统计、ML推荐、预测
+  - 文件服务: 上传、存储、CDN分发
+
+  API网关设计
+
+  - 统一入口: 路由分发和负载均衡
+  - 认证授权: JWT token验证和权限检查
+  - 限流熔断: 防止服务过载和雪崩
+  - 监控日志: 请求追踪和性能监控
+
+  这个API需求清单涵盖了87个REST端点和23个WebSocket事件，按业务域和优先级完整规划了后端API架构！
+
+✻ Thinking…
+
+  很好！现在我需要设计数据实体模型和数据库schema。这是一个关键步骤，需要基于前面分析的所有API需求来设计完整的数据库架构。
+  
+  我需要考虑：
+  1. 核心数据实体和它们之间的关系
+  2. MongoDB的collection设计
+  3. 索引策略
+  4. 数据一致性和性能优化
+  5. Redis缓存的数据结构
+  6. 分片和扩展性
+  
+  基于前面的分析，主要的数据实体包括：
+  - 用户相关：users, families, family_members
+  - 任务相关：task_templates, scheduled_tasks, task_history
+  - 游戏化相关：achievements, user_achievements, streaks, experience_records
+  - 社交相关：social_posts, comments, encouragements, notifications  
+  - 数据分析相关：user_analytics, skill_assessments
+  - 文件相关：files, avatars
+  
+  让我设计详细的数据库schema。
+
+● 🗄️ 数据库架构设计
+
+  现在基于API需求设计完整的数据实体模型和数据库schema：
+
+  MongoDB主数据库设计
+
+  1. 用户与家庭管理
+
+  // users collection
+  {
+    _id: ObjectId(),
+    username: String,
+    email: String,
+    passwordHash: String,
+    role: "student" | "parent" | "admin",
+    profile: {
+      name: String,
+      avatar: String,
+      birthDate: Date,
+      gender: "male" | "female" | "other"
+    },
+    familyId: ObjectId,  // 外键引用
+    gamification: {
+      totalPoints: Number,
+      currentXP: Number,
+      level: Number,
+      currentHearts: Number,
+      maxHearts: Number,
+      lastHeartRegen: Date
+    },
+    preferences: {
+      notifications: Object,
+      privacy: Object,
+      theme: String
+    },
+    status: "active" | "suspended",
+    createdAt: Date,
+    updatedAt: Date
+  }
+
+  // families collection
+  {
+    _id: ObjectId(),
+    name: String,
+    description: String,
+    inviteCode: String,  // 唯一邀请码
+    members: [{
+      userId: ObjectId,
+      role: "parent" | "child",
+      joinedAt: Date,
+      permissions: [String]  // 权限数组
+    }],
+    settings: {
+      maxChildren: Number,
+      pointsExpiration: Number,  // 积分过期天数
+      approvalRequired: Boolean
+    },
+    createdAt: Date,
+    updatedAt: Date
+  }
+
+  2. 任务管理系统
+
+  // task_templates collection  
+  {
+    _id: ObjectId(),
+    title: String,
+    description: String,
+    category: "learning" | "exercise" | "household" | "social" | "creativity" | "other",
+    difficulty: "easy" | "medium" | "hard",
+    estimatedTime: Number,  // 分钟
+    basePoints: Number,
+    tags: [String],
+    isCustom: Boolean,
+    createdBy: ObjectId,  // 创建者ID
+    isPublic: Boolean,    // 是否为公共模板
+    usageCount: Number,   // 使用次数统计
+    rating: {
+      average: Number,
+      count: Number
+    },
+    requirements: {
+      evidenceRequired: Boolean,
+      evidenceTypes: [String]  // 图片、视频、文档等
+    },
+    createdAt: Date,
+    updatedAt: Date
+  }
+
+  // scheduled_tasks collection
+  {
+    _id: ObjectId(),
+    templateId: ObjectId,  // 关联任务模板
+    userId: ObjectId,      // 任务执行者
+    title: String,         // 可能与模板标题不同
+    description: String,
+    scheduledDate: Date,   // 计划执行日期
+    startTime: String,     // HH:MM格式
+    endTime: String,       // HH:MM格式
+    status: "planned" | "in_progress" | "completed" | "skipped" | "overdue",
+    pointsEarned: Number,  // 实际获得积分
+    completedAt: Date,
+    evidence: {
+      files: [String],     // 文件URL数组
+      notes: String,       // 文字说明
+      approvalStatus: "pending" | "approved" | "rejected"
+    },
+    parentReview: {
+      reviewed: Boolean,
+      rating: Number,      // 1-5星评价
+      feedback: String
+    },
+    createdAt: Date,
+    updatedAt: Date
+  }
+
+  // task_history collection (优化查询的非规范化设计)
+  {
+    _id: ObjectId(),
+    userId: ObjectId,
+    taskId: ObjectId,
+    title: String,           // 冗余存储便于查询
+    category: String,        // 冗余存储
+    pointsEarned: Number,
+    completedAt: Date,
+    streak: Number,          // 完成时的连击数
+    weekOfYear: Number,      // 便于周统计
+    monthOfYear: Number,     // 便于月统计
+    year: Number,            // 便于年统计
+    indexedAt: Date          // 用于数据分析索引
+  }
+
+  3. 游戏化系统
+
+  // achievements collection (成就模板)
+  {
+    _id: ObjectId(),
+    name: String,
+    description: String,
+    category: "milestone" | "streak" | "social" | "mastery" | "special",
+    type: "bronze" | "silver" | "gold" | "platinum" | "diamond" | "legendary",
+    icon: String,
+    rarity: "common" | "rare" | "epic" | "legendary" | "mythic",
+    requirements: {
+      type: "task_count" | "streak_days" | "points_total" | "level_reach" | "social_interaction",
+      target: Number,
+      conditions: Object  // 额外条件
+    },
+    rewards: {
+      points: Number,
+      xp: Number,
+      title: String,
+      badge: String
+    },
+    isActive: Boolean,
+    createdAt: Date
+  }
+
+  // user_achievements collection
+  {
+    _id: ObjectId(),
+    userId: ObjectId,
+    achievementId: ObjectId,
+    progress: Number,        // 当前进度
+    maxProgress: Number,     // 目标进度
+    isUnlocked: Boolean,     // 是否解锁
+    isCompleted: Boolean,    // 是否完成
+    unlockedAt: Date,        // 解锁时间
+    completedAt: Date,       // 完成时间
+    rewardsClaimed: Boolean, // 是否已领取奖励
+    claimedAt: Date
+  }
+
+  // streaks collection
+  {
+    _id: ObjectId(),
+    userId: ObjectId,
+    category: String,        // 连击类别
+    current: Number,         // 当前连击
+    max: Number,             // 历史最高
+    lastActiveDate: Date,    // 最后活跃日期
+    brokenCount: Number,     // 中断次数
+    restoredCount: Number,   // 修复次数
+    milestones: [{
+      days: Number,
+      achieved: Boolean,
+      achievedAt: Date,
+      rewardClaimed: Boolean
+    }],
+    createdAt: Date,
+    updatedAt: Date
+  }
+
+  // experience_records collection (经验值变化记录)
+  {
+    _id: ObjectId(),
+    userId: ObjectId,
+    amount: Number,          // 正数为获得，负数为消耗
+    source: "task_complete" | "daily_goal" | "achievement" | "bonus" | "penalty",
+    sourceId: ObjectId,      // 来源记录ID
+    description: String,
+    timestamp: Date,
+    balanceBefore: Number,   // 变化前余额
+    balanceAfter: Number,    // 变化后余额
+    level: Number            // 当时的等级
+  }
+
+  // skills collection (技能模板)
+  {
+    _id: ObjectId(),
+    name: String,
+    description: String,
+    category: String,
+    maxLevel: Number,
+    prerequisites: [ObjectId], // 前置技能ID
+    unlockCost: Number,        // 解锁所需积分
+    levelUpFormula: String,    // 升级公式
+    rewards: Object,           // 每级奖励配置
+    tasks: [ObjectId],         // 关联任务模板
+    createdAt: Date
+  }
+
+  // user_skills collection
+  {
+    _id: ObjectId(),
+    userId: ObjectId,
+    skillId: ObjectId,
+    level: Number,
+    currentXP: Number,
+    isUnlocked: Boolean,
+    unlockedAt: Date,
+    completedTasks: [ObjectId], // 已完成的技能任务
+    lastActive: Date,
+    updatedAt: Date
+  }
+
+  4. 社交协作系统
+
+  // social_posts collection
+  {
+    _id: ObjectId(),
+    authorId: ObjectId,
+    familyId: ObjectId,      // 家庭范围可见
+    content: String,
+    type: "achievement" | "task_complete" | "level_up" | "streak" | "general",
+    attachments: [{
+      type: "image" | "video" | "file",
+      url: String,
+      thumbnail: String
+    }],
+    metadata: Object,        // 额外数据，如成就ID、任务ID等
+    likes: [ObjectId],       // 点赞用户ID数组
+    likesCount: Number,      // 冗余字段优化查询
+    comments: [{
+      _id: ObjectId(),
+      authorId: ObjectId,
+      content: String,
+      timestamp: Date,
+      likes: [ObjectId]
+    }],
+    commentsCount: Number,   // 冗余字段
+    isHighlighted: Boolean,  // 是否为重要动态
+    createdAt: Date,
+    updatedAt: Date
+  }
+
+  // encouragements collection
+  {
+    _id: ObjectId(),
+    fromId: ObjectId,
+    toId: ObjectId,
+    type: "cheer" | "gift" | "high_five" | "star" | "crown",
+    message: String,
+    relatedPost: ObjectId,   // 相关动态ID（可选）
+    isRead: Boolean,
+    readAt: Date,
+    createdAt: Date
+  }
+
+  // collaborative_tasks collection
+  {
+    _id: ObjectId(),
+    title: String,
+    description: String,
+    familyId: ObjectId,
+    createdBy: ObjectId,
+    type: "collaborative" | "challenge",
+    status: "active" | "completed" | "paused",
+    totalPoints: Number,
+    difficulty: "easy" | "medium" | "hard",
+    deadline: Date,
+    participants: [{
+      userId: ObjectId,
+      role: "leader" | "participant",
+      progress: Number,        // 个人进度百分比
+      contribution: Number,    // 贡献度
+      status: "pending" | "active" | "completed",
+      joinedAt: Date
+    }],
+    milestones: [{
+      progress: Number,        // 25%, 50%, 75%, 100%
+      reward: {
+        points: Number,
+        description: String
+      },
+      achieved: Boolean,
+      achievedAt: Date
+    }],
+    overallProgress: Number,   // 整体进度
+    createdAt: Date,
+    updatedAt: Date
+  }
+
+  // notifications collection
+  {
+    _id: ObjectId(),
+    recipientId: ObjectId,
+    type: "achievement" | "social" | "task" | "system" | "reminder" | "family",
+    title: String,
+    message: String,
+    isRead: Boolean,
+    readAt: Date,
+    isImportant: Boolean,    // 重要通知
+    actionUrl: String,       // 操作链接
+    actionLabel: String,     // 操作按钮文本
+    senderAvatar: String,
+    senderName: String,
+    metadata: Object,        // 额外数据
+    expiresAt: Date,         // 通知过期时间
+    createdAt: Date
+  }
+
+  5. 数据分析系统
+
+  // user_analytics collection (用户分析数据)
+  {
+    _id: ObjectId(),
+    userId: ObjectId,
+    date: Date,              // 统计日期
+    type: "daily" | "weekly" | "monthly",
+
+    // 基础统计
+    tasks: {
+      completed: Number,
+      totalTime: Number,      // 分钟
+      categories: Object,     // 各分类统计
+      avgRating: Number
+    },
+
+    // 行为分析
+    behavior: {
+      mostActiveHour: Number,
+      preferredDifficulty: String,
+      preferredCategories: [String],
+      completionRate: Number,
+      punctualityRate: Number  // 按时完成率
+    },
+
+    // 游戏化数据
+    gamification: {
+      pointsEarned: Number,
+      xpGained: Number,
+      achievementsUnlocked: Number,
+      streaksCount: Number,
+      levelUps: Number
+    },
+
+    // 社交数据
+    social: {
+      postsCreated: Number,
+      likesReceived: Number,
+      commentsReceived: Number,
+      encouragementsSent: Number,
+      encouragementsReceived: Number
+    },
+
+    createdAt: Date,
+    updatedAt: Date
+  }
+
+  // skill_assessments collection (技能评估)
+  {
+    _id: ObjectId(),
+    userId: ObjectId,
+    assessmentDate: Date,
+    skills: {
+      learning: { level: Number, trend: String },
+      exercise: { level: Number, trend: String },
+      household: { level: Number, trend: String },
+      social: { level: Number, trend: String },
+      creativity: { level: Number, trend: String },
+      overall: { level: Number, trend: String }
+    },
+    strengths: [String],       // 优势领域
+    improvements: [String],    // 需改进领域
+    recommendations: [String], // 推荐建议
+    nextAssessment: Date,
+    createdAt: Date
+  }
+
+  // ml_user_profiles collection (机器学习用户画像)
+  {
+    _id: ObjectId(),
+    userId: ObjectId,
+    version: Number,           // 模型版本
+
+    // 特征向量
+    features: {
+      preferredTimeSlots: [Number],      // 偏好时间段
+      difficultyPreference: [Number],    // 难度偏好分布
+      categoryPreferences: Object,       // 分类偏好权重
+      completionPatterns: Object,        // 完成模式
+      socialActivity: Number,            // 社交活跃度
+      consistencyScore: Number           // 一致性评分
+    },
+
+    // 推荐历史
+    recommendations: [{
+      taskId: ObjectId,
+      confidence: Number,        // 0-1之间
+      reason: String,
+      recommended_at: Date,
+      user_feedback: "accept" | "reject" | "helpful" | "not_helpful",
+      feedback_at: Date
+    }],
+
+    lastUpdated: Date,
+    modelAccuracy: Number      // 模型准确率
+  }
+
+  6. 文件与媒体管理
+
+  // files collection
+  {
+    _id: ObjectId(),
+    filename: String,
+    originalName: String,
+    mimeType: String,
+    size: Number,            // 字节
+    path: String,            // 存储路径
+    uploadedBy: ObjectId,    // 上传者ID
+    tags: [String],
+    isPublic: Boolean,
+    usedIn: [{              // 被使用的地方
+      collection: String,
+      documentId: ObjectId,
+      field: String
+    }],
+    metadata: {
+      width: Number,         // 图片宽度
+      height: Number,        // 图片高度
+      duration: Number       // 视频长度(秒)
+    },
+    createdAt: Date,
+    expiresAt: Date          // 临时文件过期时间
+  }
+
+  // avatar_items collection (头像装饰道具)
+  {
+    _id: ObjectId(),
+    name: String,
+    category: "skin" | "hair" | "eyes" | "mouth" | "clothing" | "accessory" | "background",
+    rarity: "common" | "rare" | "epic" | "legendary",
+    unlockRequirement: {
+      type: "points" | "level" | "achievement",
+      value: Number | String
+    },
+    price: Number,           // 积分价格
+    imageUrl: String,
+    isActive: Boolean,
+    createdAt: Date
+  }
+
+  // user_avatars collection
+  {
+    _id: ObjectId(),
+    userId: ObjectId,
+    currentAvatar: {
+      skin: ObjectId,
+      hair: ObjectId,
+      eyes: ObjectId,
+      mouth: ObjectId,
+      clothing: ObjectId,
+      accessory: ObjectId,
+      background: ObjectId
+    },
+    ownedItems: [ObjectId],   // 拥有的道具ID
+    lastUpdated: Date
+  }
+
+  Redis缓存设计
+
+  // 缓存键设计规范
+  "user:{userId}:stats"              // 用户实时统计
+  "user:{userId}:online"             // 在线状态
+  "family:{familyId}:members"        // 家庭成员列表
+  "leaderboard:{familyId}:weekly"    // 周排行榜
+  "notifications:{userId}:unread"    // 未读通知数
+  "streak:{userId}:{category}"       // 连击数据
+  "recommendations:{userId}"         // 推荐缓存
+  "session:{sessionId}"              // 会话数据
+  "ml_model:{userId}:v{version}"     // 个性化ML模型
+
+  数据库索引策略
+
+  // MongoDB 索引设计
+  db.users.createIndex({ "email": 1 }, { unique: true })
+  db.users.createIndex({ "familyId": 1 })
+  db.scheduled_tasks.createIndex({ "userId": 1, "scheduledDate": -1 })
+  db.scheduled_tasks.createIndex({ "status": 1, "scheduledDate": 1 })
+  db.task_history.createIndex({ "userId": 1, "completedAt": -1 })
+  db.task_history.createIndex({ "userId": 1, "year": 1, "monthOfYear": 1 })
+  db.social_posts.createIndex({ "familyId": 1, "createdAt": -1 })
+  db.notifications.createIndex({ "recipientId": 1, "isRead": 1, "createdAt": -1 })
+  db.user_achievements.createIndex({ "userId": 1, "isCompleted": 1 })
+
+  // 复合索引
+  db.scheduled_tasks.createIndex({ "userId": 1, "status": 1, "scheduledDate": -1 })
+  db.task_history.createIndex({ "userId": 1, "category": 1, "completedAt": -1 })
+
+  数据分片策略
+
+  // 分片键设计 (MongoDB Sharding)
+  // 按用户ID分片，确保同一用户数据在同一分片
+  sh.shardCollection("points.users", { "_id": "hashed" })
+  sh.shardCollection("points.scheduled_tasks", { "userId": "hashed" })
+  sh.shardCollection("points.task_history", { "userId": "hashed" })
+  sh.shardCollection("points.user_analytics", { "userId": "hashed" })
+
+  // 按家庭ID分片，确保同一家庭数据聚合
+  sh.shardCollection("points.social_posts", { "familyId": "hashed" })
+  sh.shardCollection("points.collaborative_tasks", { "familyId": "hashed" })
+
+  这个数据库设计支持87个API端点的完整功能，包含性能优化、数据一致性和扩展性考虑！
+
