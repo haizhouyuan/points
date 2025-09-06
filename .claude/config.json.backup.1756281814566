@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-playwright"],
+      "env": {
+        "MCP_PLAYWRIGHT_USER_DATA_DIR": "D:/login-overhaul/.playwright-user-data",
+        "MCP_PLAYWRIGHT_INSTANCE_ID": "login-overhaul-worktree",
+        "PLAYWRIGHT_BROWSERS_PATH": "0",
+        "PLAYWRIGHT_LAUNCH_OPTIONS": "{\"channel\":\"msedge\",\"executablePath\":\"C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe\"}"
+      }
+    },
+    "aliyun": {
+      "command": "ssh",
+      "args": [
+        "-o", "ConnectTimeout=30",
+        "-o", "ServerAliveInterval=60", 
+        "-o", "ServerAliveCountMax=3",
+        "-o", "StrictHostKeyChecking=no",
+        "-i", "C:\\Users\\admin\\.ssh\\id_ed25519",
+        "root@47.120.74.212",
+        "claude",
+        "mcp",
+        "serve"
+      ],
+      "env": {
+        "SSH_KEY_PATH": "C:\\Users\\admin\\.ssh\\id_ed25519"
+      }
+    }
+  }
+}

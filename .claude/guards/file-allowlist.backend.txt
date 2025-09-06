@@ -1,0 +1,8 @@
+backend/src/controllers/**
+backend/src/routes/**
+backend/src/middlewares/**
+backend/src/services/**
+backend/src/utils/**
+backend/tests/**
+
+# 禁止自动修改：数据库初始化/全局配置/通用日志格式

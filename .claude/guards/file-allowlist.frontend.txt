@@ -1,0 +1,6 @@
+frontend/src/components/**
+frontend/src/pages/**
+frontend/src/styles/**
+frontend/src/app/**
+
+# 如需更细：只在本特性相关文件夹内改动

@@ -1,0 +1,12 @@
+mode: immediate
+silent: true
+defaultBranch: 'master'
+branchName: 'feature/${issue.number}-${issue.title}'
+openPR: false
+prTarget: 'master'
+prSkipCI: false
+copyIssueDescriptionToPR: true
+copyIssueLabelsToPR: true
+copyIssueAssigneeToPR: true
+copyIssueProjectsToPR: true
+copyIssueMilestoneToPR: true

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["@upstash/context7-mcp"]
+    },
+    "zen": {
+      "command": "npx",
+      "args": ["@noodlea1/zen-mcp-server"]
+    }
+  }
+}
