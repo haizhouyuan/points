@@ -134,3 +134,31 @@
 
 该 PR 功能完成度高，技术路线清晰。修复一个编译级阻断与少量边界防护后即可安全合并。若需要，我可以提交上述“最小修复补丁”并补充 3–5 个关键单测用例，保障后续演进的稳定性。
 
+---
+
+## 已提交修复与提交记录
+
+- 修复内容：
+  - 在 `src/App.tsx` 为 `<LearningAnalyticsDashboard />` 提供真实 `tasksCompleted` 值（基于 `ActivityTracker` 统计）。
+  - 在 `src/services/analytics.service.ts` 增强健壮性：
+    - `calculateImprovementRate` 对分母为 0/极小值进行防护。
+    - `analyzeHourlyPerformance` 对分母为 0 的情况进行防护并完善泛型类型。
+- 提交哈希：`e8c78062`
+- 推送分支：`phase2-advanced-gamification`
+
+---
+
+## 待确认问题（需要产品/研发澄清）
+
+- 数据来源与落地：
+  - 学习历史与指标是否即将接 API？若接入，预期的 API 结构、鉴权与时序如何？是否保留 mock 作为 fallback？
+  - `tasksCompleted` 是否以 `ActivityTracker` 为准，还是从服务端汇总获取？是否存在“尝试未完成”的区分？
+- 数值阈值与算法参数：
+  - 改进趋势 5% 阈值、均值/分母的 epsilon（0.001）是否有领域依据？是否需要抽离为配置（env/远程配置）？
+  - `categoryCoverage` 目前假设 5 大类，是否需动态来源？
+- 可视化与可达性：
+  - 是否接受将图表改为响应式（`viewBox` + 容器宽度自适应）并加入 aria/无障碍语义？目标断点与支持设备？
+- 依赖策略：
+  - 是否要在本阶段统一移除 `sonner@x.y.z` 别名导入，回归社区标准导入并以 semver 锁版本？
+- 性能与扩展：
+  - 分析计算是否需要 memo 或 Worker 化？对 1k+/月会话数据量的性能目标是什么？
