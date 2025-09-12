@@ -1931,8 +1931,8 @@ export default function App() {
           onClaim={handleClaimDynamicAchievement}
           autoCloseDelay={8000}
         />
+        </div>
       </div>
-    </div>
     </ErrorBoundary>
   );
 }
