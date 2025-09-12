@@ -2008,7 +2008,7 @@ export default function App() {
                     currentPoints: studentData.currentPoints,
                     currentXP: experienceData.currentXP,
                     currentLevel: experienceData.level,
-                    tasksCompleted: 47 // TODO: 从 ActivityTracker 获取实际数据
+                    tasksCompleted: ActivityTracker.getActivities().filter(a => a.type === 'task_complete').length
                   }}
                 />
               </TabsContent>

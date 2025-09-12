@@ -637,6 +637,7 @@ export class AnalyticsService {
     const firstAvg = firstHalf.reduce((sum, s) => sum + s.completionRate, 0) / firstHalf.length;
     const secondAvg = secondHalf.reduce((sum, s) => sum + s.completionRate, 0) / secondHalf.length;
     
+    if (!isFinite(firstAvg) || firstAvg <= 0.001) return 0;
     return ((secondAvg - firstAvg) / firstAvg) * 100;
   }
   
@@ -708,7 +709,7 @@ export class AnalyticsService {
   }
   
   private static analyzeHourlyPerformance(sessions: LearningSession[]): Map<number, { avgScore: number; sessionCount: number; confidence: number }> {
-    const hourlyData = new Map();
+    const hourlyData = new Map<number, { total: number; count: number }>();
     
     sessions.forEach(session => {
       const hour = new Date(session.startTime).getHours();
@@ -719,10 +720,11 @@ export class AnalyticsService {
       });
     });
     
-    const result = new Map();
+    const result = new Map<number, { avgScore: number; sessionCount: number; confidence: number }>();
+    const denom = sessions.length > 0 ? sessions.length : 1;
     for (const [hour, data] of hourlyData.entries()) {
-      const avgScore = Math.round(data.total / data.count);
-      const confidence = Math.min((data.count / sessions.length) * 100 * 2, 100); // 基于样本量的置信度
+      const avgScore = Math.round(data.total / Math.max(1, data.count));
+      const confidence = Math.min((data.count / denom) * 100 * 2, 100); // 基于样本量的置信度
       
       result.set(hour, {
         avgScore,
