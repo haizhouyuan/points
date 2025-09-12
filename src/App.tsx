@@ -19,7 +19,12 @@ import { SkillTree } from "./components/SkillTree";
 import { AchievementSystem } from "./components/AchievementSystem";
 import { NotificationCenter } from "./components/NotificationCenter";
 import { BusinessLogicService, ActivityTracker, CoreFlowValidator } from "./services/business-logic.service";
-import { navigationService, useNavigation, NAVIGATION_MAP } from "./services/navigation.service";
+import { navigationService, useNavigation, NAVIGATION_MAP, NavigationRecommendation } from "./services/navigation.service";
+import { AchievementService, DynamicAchievement, UserBehaviorProfile } from "./services/achievement.service";
+import AchievementCard from "./components/AchievementCard";
+import AchievementNotification from "./components/AchievementNotification";
+import LearningAnalyticsDashboard from "./components/LearningAnalyticsDashboard";
+import { ErrorBoundary, SectionErrorBoundary } from "./components/ErrorBoundary";
 
 export default function App() {
   // 移除角色切换，专注于学生体验
@@ -27,7 +32,7 @@ export default function App() {
   // 🧭 智能导航系统
   const navigation = useNavigation();
   const [currentTab, setCurrentTab] = useState('overview');
-  const [navigationRecommendation, setNavigationRecommendation] = useState<any>(null);
+  const [navigationRecommendation, setNavigationRecommendation] = useState<NavigationRecommendation | null>(null);
   
   // 学生数据
   const [studentData, setStudentData] = useState({
@@ -241,7 +246,29 @@ export default function App() {
   // ⏰ 用户当前可用时间
   const [availableTime, setAvailableTime] = useState(45); // 分钟
 
-  // 🏆 成就系统数据
+  // 🏆 Phase 2 动态成就系统数据
+  const [dynamicAchievements, setDynamicAchievements] = useState<DynamicAchievement[]>([]);
+  const [achievementNotification, setAchievementNotification] = useState<{
+    achievement: DynamicAchievement | null;
+    visible: boolean;
+  }>({ achievement: null, visible: false });
+  
+  // 🏆 用户行为档案
+  const [userBehaviorProfile] = useState<UserBehaviorProfile>({
+    preferredCategories: ['学习', '阅读'],
+    averageSessionMinutes: 25,
+    streakRecord: 12,
+    difficultyPreference: 'medium',
+    activityPatterns: {
+      morningActive: 0.8,
+      afternoonActive: 0.6,
+      eveningActive: 0.7
+    },
+    learningStyle: 'visual',
+    motivationTriggers: ['achievement', 'progress']
+  });
+
+  // 🏆 传统成就系统数据 (保持兼容)
   const [achievementsData] = useState([
     {
       id: 'first_task',
@@ -1005,7 +1032,98 @@ export default function App() {
     });
   };
 
-  // 🏆 成就系统处理函数
+  // 🏆 Phase 2 动态成就系统处理函数
+  const generatePersonalizedAchievements = () => {
+    const newAchievements = AchievementService.generatePersonalizedAchievements(
+      '1', // userId
+      userBehaviorProfile,
+      dynamicAchievements
+    );
+    
+    setDynamicAchievements(prev => [...prev, ...newAchievements]);
+    
+    if (newAchievements.length > 0) {
+      toast.success(`🎯 生成了 ${newAchievements.length} 个个性化成就！`, {
+        description: '前往成就页面查看详情',
+        duration: 4000,
+      });
+    }
+  };
+  
+  const handleClaimDynamicAchievement = (achievementId: string) => {
+    // 使用函数式更新确保原子性操作
+    setDynamicAchievements(prev => {
+      const achievement = prev.find(a => a.id === achievementId);
+      if (!achievement || !achievement.isCompleted) return prev;
+
+      // 更新用户数据（使用函数式更新避免竞态条件）
+      setStudentData(prevStudent => ({
+        ...prevStudent,
+        currentPoints: prevStudent.currentPoints + achievement.rewards.points
+      }));
+
+      setExperienceData(prevExp => ({
+        ...prevExp,
+        currentXP: prevExp.currentXP + (achievement.rewards.points * 0.5) // 积分转经验
+      }));
+
+      // 显示庆祝动画（延迟执行避免状态冲突）
+      setTimeout(() => {
+        setCelebration({
+          show: true,
+          type: 'milestone',
+          message: `🏆 ${achievement.title}`,
+          subMessage: `获得 ${achievement.rewards.points} 积分奖励！`
+        });
+
+        setTimeout(() => {
+          setCelebration(prev => ({ ...prev, show: false }));
+        }, 4000);
+      }, 0);
+
+      // 原子性地移除已领取的成就
+      return prev.filter(a => a.id !== achievementId);
+    });
+  };
+  
+  const checkAchievementProgress = () => {
+    // 使用函数式更新避免竞态条件
+    setDynamicAchievements(prevAchievements => {
+      const userStats = {
+        tasksCompleted: { all_time: 47, weekly: 12, daily: 3 },
+        currentStreak: streakData.find(s => s.category === '学习')?.current || 0,
+        totalPoints: studentData.currentPoints,
+        timeSpent: { all_time: 1500, weekly: 350, daily: 45 },
+        averageDifficulty: 2,
+        unlockedSkills: skillTreeData.filter(s => s.isUnlocked)
+      };
+
+      const updatedAchievements = prevAchievements.map(achievement => {
+        const progress = AchievementService.checkAchievementProgress(achievement, userStats);
+        
+        // 检查是否新完成 - 使用原始状态避免重复通知
+        if (progress.isCompleted && !achievement.isCompleted) {
+          // 触发成就完成通知 - 延迟执行避免批处理冲突
+          setTimeout(() => {
+            setAchievementNotification(prev => {
+              // 避免重复设置相同成就通知
+              if (prev.achievement?.id === achievement.id) return prev;
+              return {
+                achievement: { ...achievement, ...progress },
+                visible: true
+              };
+            });
+          }, 0);
+        }
+        
+        return { ...achievement, ...progress };
+      });
+
+      return updatedAchievements;
+    });
+  };
+
+  // 🏆 传统成就系统处理函数 (保持兼容)
   const handleClaimAchievementReward = (achievementId: string) => {
     const achievement = achievementsData.find(a => a.id === achievementId);
     if (!achievement) return;
@@ -1319,8 +1437,9 @@ export default function App() {
   const unreadNotificationCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-duolingo-green-subtle via-duolingo-blue-subtle to-duolingo-purple-subtle">
-      <Toaster position="top-center" richColors />
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gradient-to-br from-duolingo-green-subtle via-duolingo-blue-subtle to-duolingo-purple-subtle">
+        <Toaster position="top-center" richColors />
       
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* 🏠 简化家庭版本提示 */}
@@ -1388,7 +1507,7 @@ export default function App() {
                 transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
                 className="mb-8"
               >
-                <TabsList className="grid w-full grid-cols-6 bg-gradient-to-r from-white via-warm-gray-50 to-white shadow-2xl rounded-[2rem] p-3 border-4 border-duolingo-green-subtle backdrop-blur-sm relative overflow-hidden min-h-20 h-auto">
+                <TabsList className="grid w-full grid-cols-7 bg-gradient-to-r from-white via-warm-gray-50 to-white shadow-2xl rounded-[2rem] p-3 border-4 border-duolingo-green-subtle backdrop-blur-sm relative overflow-hidden min-h-20 h-auto">
                   {/* 🎨 Duolingo 风格背景装饰 */}
                   <div className="absolute inset-0 bg-gradient-to-r from-duolingo-green-subtle/30 via-duolingo-blue-subtle/20 to-duolingo-purple-subtle/30 rounded-[2rem]"></div>
                   <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-duolingo-green via-duolingo-orange via-duolingo-blue to-duolingo-purple rounded-t-[2rem]"></div>
@@ -1479,6 +1598,20 @@ export default function App() {
                     >
                       <span className="text-2xl">🌟</span>
                       <span className="text-sm font-bold">技能成长</span>
+                    </motion.span>
+                  </TabsTrigger>
+                  
+                  <TabsTrigger 
+                    value="analytics" 
+                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-3 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-blue data-[state=active]:to-duolingo-green data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-blue/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-blue-subtle data-[state=inactive]:hover:text-duolingo-green-dark data-[state=inactive]:text-warm-gray-600"
+                  >
+                    <motion.span
+                      whileHover={{ scale: 1.08, rotate: 2 }}
+                      whileTap={{ scale: 0.92 }}
+                      className="flex flex-col items-center gap-1 text-center"
+                    >
+                      <span className="text-2xl">📈</span>
+                      <span className="text-sm font-bold">学习分析</span>
                     </motion.span>
                   </TabsTrigger>
                 </TabsList>
@@ -1682,19 +1815,88 @@ export default function App() {
                 />
               </TabsContent>
 
-              <TabsContent value="achievements">
-                <AchievementSystem 
-                  achievements={achievementsData}
-                  userStats={{
-                    totalTasks: 47, // TODO: Get from API
-                    totalStreaks: streakData.reduce((sum, s) => sum + s.current, 0),
-                    totalPoints: studentData.currentPoints,
-                    totalXP: experienceData.currentXP,
-                    maxStreak: Math.max(...streakData.map(s => s.max)),
-                    familyInteractions: socialData.encouragements.length + socialData.posts.reduce((sum, p) => sum + p.likes.length + p.comments.length, 0)
-                  }}
-                  onClaimReward={handleClaimAchievementReward}
-                />
+              <TabsContent value="achievements" className="space-y-6">
+                {/* 🎯 生成个性化成就按钮 */}
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="flex justify-center"
+                >
+                  <Button
+                    onClick={generatePersonalizedAchievements}
+                    className="bg-gradient-to-r from-duolingo-purple to-duolingo-pink hover:from-duolingo-pink hover:to-duolingo-purple text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    🎯 生成个性化成就
+                  </Button>
+                </motion.div>
+
+                {/* 🏆 动态成就展示 */}
+                {dynamicAchievements.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="space-y-4"
+                  >
+                    <h3 className="text-2xl font-bold text-duolingo-green mb-4 text-center">
+                      🌟 个性化成就
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {dynamicAchievements.map((achievement, index) => (
+                        <motion.div
+                          key={achievement.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <AchievementCard
+                            achievement={achievement}
+                            onClaim={handleClaimDynamicAchievement}
+                            size="medium"
+                            showProgress={true}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* 🏆 传统成就系统 (保持兼容) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                  <AchievementSystem 
+                    achievements={achievementsData}
+                    userStats={{
+                      totalTasks: 47, // TODO: Get from API
+                      totalStreaks: streakData.reduce((sum, s) => sum + s.current, 0),
+                      totalPoints: studentData.currentPoints,
+                      totalXP: experienceData.currentXP,
+                      maxStreak: Math.max(...streakData.map(s => s.max)),
+                      familyInteractions: socialData.encouragements.length + socialData.posts.reduce((sum, p) => sum + p.likes.length + p.comments.length, 0)
+                    }}
+                    onClaimReward={handleClaimAchievementReward}
+                  />
+                </motion.div>
+
+                {/* 检查成就进度按钮 */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                  className="flex justify-center"
+                >
+                  <Button
+                    onClick={checkAchievementProgress}
+                    variant="outline"
+                    className="border-duolingo-blue text-duolingo-blue hover:bg-duolingo-blue hover:text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300"
+                  >
+                    📊 更新成就进度
+                  </Button>
+                </motion.div>
               </TabsContent>
 
               <TabsContent value="skilltree">
@@ -1704,6 +1906,10 @@ export default function App() {
                   onUnlockSkill={handleUnlockSkill}
                   userPoints={studentData.currentPoints}
                 />
+              </TabsContent>
+
+              <TabsContent value="analytics" className="space-y-6">
+                <LearningAnalyticsDashboard />
               </TabsContent>
             </Tabs>
         </div>
@@ -1716,7 +1922,17 @@ export default function App() {
           subMessage={celebration.subMessage}
           onComplete={() => setCelebration(prev => ({ ...prev, show: false }))}
         />
+
+        {/* 🏆 成就解锁通知 */}
+        <AchievementNotification
+          achievement={achievementNotification.achievement!}
+          isVisible={achievementNotification.visible}
+          onClose={() => setAchievementNotification({ achievement: null, visible: false })}
+          onClaim={handleClaimDynamicAchievement}
+          autoCloseDelay={8000}
+        />
       </div>
     </div>
+    </ErrorBoundary>
   );
 }

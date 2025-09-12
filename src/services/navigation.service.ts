@@ -5,6 +5,23 @@
 
 import { ActivityTracker } from './business-logic.service';
 
+// 类型定义
+export interface UserNavigationContext {
+  tasksCompleted?: number;
+  pointsEarned?: number;
+  achievementUnlocked?: boolean;
+  streakProgress?: number;
+  currentPoints?: number;
+  timeSpent?: number;
+}
+
+export interface NavigationRecommendation {
+  recommended: TabKey;
+  reason: string;
+  confidence: number;
+  alternatives: TabKey[];
+}
+
 // 导航结构定义 - 基于CLAUDE.md框架
 export const NAVIGATION_MAP = {
   // 核心页面枢纽
@@ -392,13 +409,8 @@ export class NavigationService {
   
   private calculateNavigationRecommendations(
     currentTab: TabKey, 
-    userContext?: any
-  ): {
-    recommended: TabKey;
-    reason: string;
-    confidence: number;
-    alternatives: TabKey[];
-  } {
+    userContext?: UserNavigationContext
+  ): NavigationRecommendation {
     // 基于不同场景的推荐逻辑
     if (userContext?.tasksCompleted > 0 && currentTab === 'planning') {
       return {
@@ -611,7 +623,7 @@ export function useNavigation() {
     });
   };
   
-  const getRecommendation = (userContext?: any) => {
+  const getRecommendation = (userContext?: UserNavigationContext) => {
     return navigationService.getRecommendedNextPage(
       navigationService.navigationState.currentTab,
       userContext

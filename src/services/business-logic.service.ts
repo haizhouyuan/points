@@ -296,23 +296,48 @@ export class ActivityTracker {
     
     this.activities.push(fullActivity);
     
-    // 本地存储 (Phase 1 简化实现)
+    // 本地存储 (Phase 1 简化实现) - 修复内存泄露
     try {
       const stored = localStorage.getItem('user_activities') || '[]';
       const activities = JSON.parse(stored);
       activities.push(fullActivity);
       
-      // 保留最近100条记录
-      if (activities.length > 100) {
-        activities.splice(0, activities.length - 100);
+      // 保留最近50条记录 (降低内存占用)
+      if (activities.length > 50) {
+        activities.splice(0, activities.length - 50);
+      }
+      
+      // 检查localStorage使用量，防止超限
+      const serializedData = JSON.stringify(activities);
+      const dataSize = new Blob([serializedData]).size;
+      
+      // 如果数据大小超过100KB，进一步清理
+      if (dataSize > 100 * 1024) {
+        activities.splice(0, activities.length - 30);
       }
       
       localStorage.setItem('user_activities', JSON.stringify(activities));
       
+      // 清理内存中的旧记录
+      if (this.activities.length > 50) {
+        this.activities.splice(0, this.activities.length - 50);
+      }
+      
       // 控制台输出用于Phase 1验证
-      console.log('📊 Activity Tracked:', fullActivity);
+      console.log('📊 Activity Tracked:', {
+        type: fullActivity.type,
+        timestamp: fullActivity.timestamp,
+        dataSize: `${Math.round(dataSize/1024)}KB`
+      });
     } catch (error) {
       console.warn('Failed to store user activity:', error);
+      // 如果存储失败，清理localStorage重试一次
+      try {
+        localStorage.removeItem('user_activities');
+        localStorage.setItem('user_activities', JSON.stringify([fullActivity]));
+      } catch (retryError) {
+        console.error('Critical: localStorage completely unavailable');
+      }
     }
   }
   
@@ -402,18 +427,32 @@ export class ActivityTracker {
     
     this.activities.push(fullActivity);
     
-    // 存储到本地
+    // 存储到本地 - 修复内存泄露
     try {
       const stored = localStorage.getItem('user_activities') || '[]';
       const activities = JSON.parse(stored);
       activities.push(fullActivity);
       
-      // 保留最近200条记录（增加容量以支持更丰富的分析）
-      if (activities.length > 200) {
-        activities.splice(0, activities.length - 200);
+      // 保留最近50条记录（防止内存泄露）
+      if (activities.length > 50) {
+        activities.splice(0, activities.length - 50);
+      }
+      
+      // 检查localStorage使用量
+      const serializedData = JSON.stringify(activities);
+      const dataSize = new Blob([serializedData]).size;
+      
+      // 如果数据大小超过100KB，进一步清理
+      if (dataSize > 100 * 1024) {
+        activities.splice(0, activities.length - 30);
       }
       
       localStorage.setItem('user_activities', JSON.stringify(activities));
+      
+      // 清理内存中的旧记录
+      if (this.activities.length > 50) {
+        this.activities.splice(0, this.activities.length - 50);
+      }
       
       // 控制台输出用于Phase 1验证
       console.log('📊 Enhanced Activity Tracked:', {
@@ -421,10 +460,18 @@ export class ActivityTracker {
         userId,
         sessionId,
         deviceInfo: deviceInfo.platform,
-        timestamp: fullActivity.timestamp
+        timestamp: fullActivity.timestamp,
+        dataSize: `${Math.round(dataSize/1024)}KB`
       });
     } catch (error) {
       console.warn('Failed to store enhanced user activity:', error);
+      // 如果存储失败，清理localStorage重试一次
+      try {
+        localStorage.removeItem('user_activities');
+        localStorage.setItem('user_activities', JSON.stringify([fullActivity]));
+      } catch (retryError) {
+        console.error('Critical: localStorage completely unavailable');
+      }
     }
   }
 
