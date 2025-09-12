@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { Star, Target, Zap, Trophy, Settings, Sparkles, Crown } from 'lucide-react';
 
 interface ExperienceSystemProps {

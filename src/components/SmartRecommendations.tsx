@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { Sparkles, Clock, TrendingUp, Target, Brain, Zap, ThumbsUp, ThumbsDown, Star } from 'lucide-react';
 import { RecommendationService, RecommendationResponse } from '../services/recommendation.service';
 import { BehaviorAnalysisService, BehaviorAnalysisResult } from '../services/behavior-analysis.service';

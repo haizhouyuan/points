@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { LearningInsight } from '../services/analytics.service';
+import { LearningInsight } from '@/services/analytics.service';
 
 interface LearningInsightsPanelProps {
   insights: LearningInsight[];

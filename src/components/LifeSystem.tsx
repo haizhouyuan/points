@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { Heart, Clock, Zap, RefreshCw, AlertTriangle, Shield } from 'lucide-react';
 
 interface LifeSystemProps {

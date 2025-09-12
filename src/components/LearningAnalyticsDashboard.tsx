@@ -6,7 +6,7 @@ import {
   PerformanceMetrics, 
   SkillProgression, 
   LearningInsight 
-} from '../services/analytics.service';
+} from '@/services/analytics.service';
 import LearningAnalyticsChart from './LearningAnalyticsChart';
 import LearningInsightsPanel from './LearningInsightsPanel';
 

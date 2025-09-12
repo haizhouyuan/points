@@ -73,7 +73,14 @@ export const LearningAnalyticsChart: React.FC<LearningAnalyticsChartProps> = ({
     
     return (
       <div className="relative">
-        <svg width={containerWidth} height={height} className="overflow-visible">
+        <svg
+          width={containerWidth}
+          height={height}
+          className="overflow-visible"
+          role="img"
+          aria-label={`${title} 折线图`}
+        >
+          <title>{title}</title>
           {/* 网格线 */}
           <defs>
             <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -172,7 +179,14 @@ export const LearningAnalyticsChart: React.FC<LearningAnalyticsChartProps> = ({
     
     return (
       <div className="relative">
-        <svg width={containerWidth} height={height} className="overflow-visible">
+        <svg
+          width={containerWidth}
+          height={height}
+          className="overflow-visible"
+          role="img"
+          aria-label={`${title} 柱状图`}
+        >
+          <title>{title}</title>
           {/* Y轴标签 */}
           {[0, 0.25, 0.5, 0.75, 1].map((ratio, index) => {
             const y = chartHeight - padding - ratio * (chartHeight - 2 * padding);
@@ -254,7 +268,14 @@ export const LearningAnalyticsChart: React.FC<LearningAnalyticsChartProps> = ({
     
     return (
       <div className="relative flex items-center justify-center">
-        <svg width={size} height={size} className="overflow-visible">
+        <svg
+          width={size}
+          height={size}
+          className="overflow-visible"
+          role="img"
+          aria-label={`${title} 饼图`}
+        >
+          <title>{title}</title>
           {data.map((point, index) => {
             const percentage = (point.value / total) * 100;
             const angle = (point.value / total) * 360;
@@ -359,7 +380,14 @@ export const LearningAnalyticsChart: React.FC<LearningAnalyticsChartProps> = ({
     
     return (
       <div className="relative">
-        <svg width={size} height={size} className="overflow-visible">
+        <svg
+          width={size}
+          height={size}
+          className="overflow-visible"
+          role="img"
+          aria-label={`${title} 雷达图`}
+        >
+          <title>{title}</title>
           {/* 网格线 */}
           {Array.from({ length: levels }, (_, level) => {
             const levelRadius = radius * (level + 1) / levels;
@@ -487,7 +515,14 @@ export const LearningAnalyticsChart: React.FC<LearningAnalyticsChartProps> = ({
     
     return (
       <div className="relative">
-        <svg width={width} height={height + 40} className="overflow-visible">
+        <svg
+          width={width}
+          height={height + 40}
+          className="overflow-visible"
+          role="img"
+          aria-label={`${title} 热力图`}
+        >
+          <title>{title}</title>
           {data.map((point, index) => {
             const row = Math.floor(index / cols);
             const col = index % cols;
