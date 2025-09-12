@@ -5,13 +5,10 @@ import { Button } from "./components/ui/button";
 import { toast } from "sonner@2.0.3";
 import { Toaster } from "./components/ui/sonner";
 import { motion } from "motion/react";
-import { User, UserCheck, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
-import { PointsHeader } from "./components/PointsHeader";
 import { RewardsSection } from "./components/RewardsSection";
 import { TaskHistorySection } from "./components/TaskHistorySection";
-import { FamilyLeaderboardSection } from "./components/FamilyLeaderboardSection";
-import { ParentDashboardSection } from "./components/ParentDashboardSection";
 import { HabitTrackerSection } from "./components/HabitTrackerSection";
 import { TaskPlanning } from "./components/TaskPlanning";
 import { StreakSystem } from "./components/StreakSystem";
@@ -19,16 +16,18 @@ import { ExperienceSystem } from "./components/ExperienceSystem";
 import { LifeSystem } from "./components/LifeSystem";
 import { CelebrationEffect } from "./components/CelebrationEffect";
 import { SkillTree } from "./components/SkillTree";
-import { SmartRecommendations } from "./components/SmartRecommendations";
 import { AchievementSystem } from "./components/AchievementSystem";
-import { SocialInteraction } from "./components/SocialInteraction";
-import { PersonalizedAvatar } from "./components/PersonalizedAvatar";
-import { FamilyCollaboration } from "./components/FamilyCollaboration";
-import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { NotificationCenter } from "./components/NotificationCenter";
+import { BusinessLogicService, ActivityTracker, CoreFlowValidator } from "./services/business-logic.service";
+import { navigationService, useNavigation, NAVIGATION_MAP } from "./services/navigation.service";
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<"student" | "parent">("student");
+  // 移除角色切换，专注于学生体验
+  
+  // 🧭 智能导航系统
+  const navigation = useNavigation();
+  const [currentTab, setCurrentTab] = useState('overview');
+  const [navigationRecommendation, setNavigationRecommendation] = useState<any>(null);
   
   // 学生数据
   const [studentData, setStudentData] = useState({
@@ -774,24 +773,107 @@ export default function App() {
   // 当前分析周期
   const [currentPeriod, setCurrentPeriod] = useState<'week' | 'month' | 'year'>('week');
 
-  // 处理任务完成（从任务规划页面）
+  // 🧭 智能导航处理函数
+  const handleTabChange = (newTab: string) => {
+    // 使用导航服务进行智能切换
+    const navigationResult = navigation.navigate(newTab as any, `用户主动切换到${newTab}页面`);
+    
+    setCurrentTab(newTab);
+    
+    // 显示导航建议（如果有的话）
+    if (navigationResult.guidance && !navigationResult.recommended) {
+      toast.info(`💡 导航提示`, {
+        description: navigationResult.guidance,
+        duration: 3000,
+      });
+    }
+    
+    // 更新导航推荐
+    const recommendation = navigation.getRecommendation();
+    setNavigationRecommendation(recommendation);
+  };
+
+  const handleSmartNavigation = (context: any) => {
+    const recommendation = navigation.getRecommendation(context);
+    
+    if (recommendation.confidence > 0.8) {
+      // 高置信度推荐，显示建议
+      toast.success(`🚀 建议下一步`, {
+        description: `${recommendation.reason}，前往${NAVIGATION_MAP[recommendation.recommended as any]?.title}`,
+        action: {
+          label: "前往",
+          onClick: () => handleTabChange(recommendation.recommended)
+        },
+        duration: 6000,
+      });
+    }
+  };
+
+  // 处理任务完成（从任务规划页面）- 使用业务逻辑服务
   const handleTaskCompletedFromPlanning = (task: any) => {
-    // 更新积分
+    // 使用业务逻辑服务计算积分
+    const taskData = {
+      id: task.id || `task_${Date.now()}`,
+      title: task.title || '学习任务',
+      description: task.description || '',
+      category: 'medium' as const, // 根据实际任务类型映射
+      estimatedMinutes: task.estimatedMinutes || 30,
+      difficulty: task.difficulty || 'medium' as const,
+      skillType: task.category || '学习'
+    };
+    
+    const pointsResult = BusinessLogicService.calculateTaskPoints(taskData, studentData.level);
+    
+    // 更新积分和经验值
     setStudentData(prev => ({
       ...prev,
-      currentPoints: prev.currentPoints + task.points
+      currentPoints: prev.currentPoints + pointsResult.points
+    }));
+    
+    setExperienceData(prev => ({
+      ...prev,
+      currentXP: prev.currentXP + pointsResult.xp,
+      dailyProgress: prev.dailyProgress + pointsResult.xp
     }));
 
-    // 添加到任务历史
-    const newHistoryItem = {
-      id: `history_${Date.now()}`,
-      title: task.title,
-      description: task.description,
-      points: task.points,
-      completedAt: new Date().toISOString(),
-      category: task.category
-    };
-    // 这里可以更新taskHistory状态，但由于它是只读的，我们只显示toast
+    // 记录用户活动 - 使用增强版追踪
+    ActivityTracker.trackEnhanced({
+      type: 'task_complete',
+      data: {
+        taskId: taskData.id,
+        title: taskData.title,
+        pointsEarned: pointsResult.points,
+        xpEarned: pointsResult.xp,
+        difficulty: taskData.difficulty,
+        category: taskData.category,
+        reasoning: pointsResult.reasoning,
+        estimatedMinutes: taskData.estimatedMinutes,
+        skillType: taskData.skillType
+      }
+    });
+
+    // 显示成功提示
+    toast.success(`🎉 任务完成！`, {
+      description: `获得 ${pointsResult.points} 积分, ${pointsResult.xp} 经验值`,
+      duration: 4000,
+    });
+
+    // 检查成就解锁
+    if (pointsResult.achievements && pointsResult.achievements.length > 0) {
+      pointsResult.achievements.forEach(achievement => {
+        toast.success(`🏆 解锁成就：${achievement}`, {
+          description: '前往成就页面查看详情',
+          duration: 6000,
+        });
+      });
+    }
+
+    // 智能导航推荐
+    handleSmartNavigation({
+      tasksCompleted: 1,
+      pointsEarned: pointsResult.points,
+      achievementUnlocked: pointsResult.achievements && pointsResult.achievements.length > 0
+    });
   };
 
   // 🎮 游戏化系统处理函数
@@ -1241,53 +1323,39 @@ export default function App() {
       <Toaster position="top-center" richColors />
       
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* 🎨 Duolingo 风格角色切换器 */}
+        {/* 🏠 简化家庭版本提示 */}
         <motion.div 
           className="flex justify-center mb-8"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, type: "spring", stiffness: 120 }}
         >
-          <div className="bg-white rounded-[2rem] p-2 shadow-2xl border-4 border-duolingo-green-subtle relative overflow-hidden">
+          <div className="bg-white rounded-[2rem] p-6 shadow-2xl border-4 border-duolingo-green-subtle relative overflow-hidden max-w-lg">
             {/* 背景装饰 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-duolingo-green-subtle/30 via-white to-duolingo-blue-subtle/30"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-duolingo-green-subtle/20 via-white to-duolingo-blue-subtle/20"></div>
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-duolingo-green via-duolingo-orange to-duolingo-blue rounded-t-[2rem]"></div>
             
-            <div className="relative z-10 flex">
-              <Button
-                variant={currentUser === "student" ? "default" : "ghost"}
-                onClick={() => setCurrentUser("student")}
-                className={`flex items-center gap-3 px-8 py-4 rounded-[1.5rem] font-bold text-lg transition-all duration-300 transform ${
-                  currentUser === "student" 
-                    ? "bg-gradient-to-r from-duolingo-green to-duolingo-green-light text-white shadow-xl shadow-duolingo-green/30 scale-105" 
-                    : "text-warm-gray-600 hover:text-duolingo-green hover:bg-duolingo-green-subtle hover:scale-102"
-                }`}
+            <div className="relative z-10 text-center">
+              <motion.div
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
               >
-                <motion.div
-                  whileHover={{ rotate: 5 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <User className="w-5 h-5" />
-                </motion.div>
-                🎓 学生端
-              </Button>
-              <Button
-                variant={currentUser === "parent" ? "default" : "ghost"}
-                onClick={() => setCurrentUser("parent")}
-                className={`flex items-center gap-3 px-8 py-4 rounded-[1.5rem] font-bold text-lg transition-all duration-300 transform ${
-                  currentUser === "parent" 
-                    ? "bg-gradient-to-r from-duolingo-blue to-duolingo-blue-light text-white shadow-xl shadow-duolingo-blue/30 scale-105" 
-                    : "text-warm-gray-600 hover:text-duolingo-blue hover:bg-duolingo-blue-subtle hover:scale-102"
-                }`}
-              >
-                <motion.div
-                  whileHover={{ rotate: -5 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <UserCheck className="w-5 h-5" />
-                </motion.div>
-                👨‍👩‍👧‍👦 家长端
-              </Button>
+                <div className="text-4xl mb-3">🏠</div>
+                <h1 className="text-2xl font-bold text-duolingo-green mb-2">
+                  家庭学习成长助手
+                </h1>
+                <p className="text-warm-gray-600 text-sm">
+                  专为 <span className="font-bold text-duolingo-blue">{studentData.name}</span> 定制的个人学习空间
+                </p>
+              </motion.div>
+              
+              {/* 简化的模式指示 */}
+              <div className="mt-4 flex justify-center">
+                <div className="bg-duolingo-green-subtle rounded-full px-4 py-2 text-sm font-semibold text-duolingo-green-dark">
+                  🎓 学习模式
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -1311,17 +1379,16 @@ export default function App() {
           />
         </motion.div>
 
-        {currentUser === "student" ? (
-          /* 学生端界面 */
-          <div className="space-y-6">
-            <Tabs defaultValue="overview" className="w-full">
+        {/* 🎓 学生学习界面 */}
+        <div className="space-y-6">
+          <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
                 className="mb-8"
               >
-                <TabsList className="grid w-full grid-cols-14 bg-gradient-to-r from-white via-warm-gray-50 to-white shadow-2xl rounded-[2rem] p-3 border-4 border-duolingo-green-subtle backdrop-blur-sm relative overflow-hidden min-h-20 h-auto">
+                <TabsList className="grid w-full grid-cols-6 bg-gradient-to-r from-white via-warm-gray-50 to-white shadow-2xl rounded-[2rem] p-3 border-4 border-duolingo-green-subtle backdrop-blur-sm relative overflow-hidden min-h-20 h-auto">
                   {/* 🎨 Duolingo 风格背景装饰 */}
                   <div className="absolute inset-0 bg-gradient-to-r from-duolingo-green-subtle/30 via-duolingo-blue-subtle/20 to-duolingo-purple-subtle/30 rounded-[2rem]"></div>
                   <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-duolingo-green via-duolingo-orange via-duolingo-blue to-duolingo-purple rounded-t-[2rem]"></div>
@@ -1330,213 +1397,144 @@ export default function App() {
                   <div className="absolute top-6 right-6 w-3 h-3 bg-duolingo-orange rounded-full opacity-40"></div>
                   <div className="absolute bottom-4 left-1/2 w-2 h-2 bg-duolingo-blue rounded-full opacity-50"></div>
                   
-                  {/* 🎨 Duolingo 风格标签按钮 */}
+                  {/* 🎨 Duolingo 风格标签按钮 - 个人家庭版核心功能 */}
                   <TabsTrigger 
                     value="overview" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-green data-[state=active]:to-duolingo-green-light data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-green/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-green-subtle data-[state=inactive]:hover:text-duolingo-green-dark data-[state=inactive]:text-warm-gray-600"
+                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-3 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-green data-[state=active]:to-duolingo-green-light data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-green/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-green-subtle data-[state=inactive]:hover:text-duolingo-green-dark data-[state=inactive]:text-warm-gray-600"
                   >
                     <motion.span
                       whileHover={{ scale: 1.08, rotate: 2 }}
                       whileTap={{ scale: 0.92 }}
                       className="flex flex-col items-center gap-1 text-center"
                     >
-                      <span className="text-lg">✨</span>
-                      <span className="text-xs font-bold">积分概览</span>
-                    </motion.span>
-                  </TabsTrigger>
-                  
-                  <TabsTrigger 
-                    value="rewards" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-orange data-[state=active]:to-duolingo-orange-light data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-orange/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-orange-subtle data-[state=inactive]:hover:text-duolingo-orange-dark data-[state=inactive]:text-warm-gray-600"
-                  >
-                    <motion.span
-                      whileHover={{ scale: 1.08, rotate: -2 }}
-                      whileTap={{ scale: 0.92 }}
-                      className="flex flex-col items-center gap-1 text-center"
-                    >
-                      <span className="text-lg">🎁</span>
-                      <span className="text-xs font-bold">兑换奖励</span>
+                      <span className="text-2xl">🏠</span>
+                      <span className="text-sm font-bold">家庭主页</span>
                     </motion.span>
                   </TabsTrigger>
                   
                   <TabsTrigger 
                     value="planning" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-blue data-[state=active]:to-duolingo-blue-light data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-blue/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-blue-subtle data-[state=inactive]:hover:text-duolingo-blue-dark data-[state=inactive]:text-warm-gray-600"
+                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-3 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-blue data-[state=active]:to-duolingo-blue-light data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-blue/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-blue-subtle data-[state=inactive]:hover:text-duolingo-blue-dark data-[state=inactive]:text-warm-gray-600"
                   >
                     <motion.span
                       whileHover={{ scale: 1.08, rotate: 2 }}
                       whileTap={{ scale: 0.92 }}
                       className="flex flex-col items-center gap-1 text-center"
                     >
-                      <span className="text-lg">📅</span>
-                      <span className="text-xs font-bold">任务规划</span>
+                      <span className="text-2xl">📅</span>
+                      <span className="text-sm font-bold">今日任务</span>
                     </motion.span>
                   </TabsTrigger>
                   
                   <TabsTrigger 
                     value="habits" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-purple data-[state=active]:to-duolingo-pink data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-purple/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-purple-subtle data-[state=inactive]:hover:text-duolingo-purple data-[state=inactive]:text-warm-gray-600"
+                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-3 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-purple data-[state=active]:to-duolingo-pink data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-purple/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-purple-subtle data-[state=inactive]:hover:text-duolingo-purple data-[state=inactive]:text-warm-gray-600"
                   >
                     <motion.span
                       whileHover={{ scale: 1.08, rotate: -2 }}
                       whileTap={{ scale: 0.92 }}
                       className="flex flex-col items-center gap-1 text-center"
                     >
-                      <span className="text-lg">🔥</span>
-                      <span className="text-xs font-bold">打卡习惯</span>
+                      <span className="text-2xl">🔥</span>
+                      <span className="text-sm font-bold">打卡习惯</span>
                     </motion.span>
                   </TabsTrigger>
                   
                   <TabsTrigger 
-                    value="history" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-green-dark data-[state=active]:to-duolingo-blue-dark data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-blue/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-blue-subtle data-[state=inactive]:hover:text-duolingo-blue-dark data-[state=inactive]:text-warm-gray-600"
-                  >
-                    <motion.span
-                      whileHover={{ scale: 1.08, rotate: 2 }}
-                      whileTap={{ scale: 0.92 }}
-                      className="flex flex-col items-center gap-1 text-center"
-                    >
-                      <span className="text-lg">📋</span>
-                      <span className="text-xs font-bold">历史记录</span>
-                    </motion.span>
-                  </TabsTrigger>
-                  
-                  <TabsTrigger 
-                    value="skilltree" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-pink data-[state=active]:to-duolingo-purple data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-pink/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-pink-subtle data-[state=inactive]:hover:text-duolingo-purple data-[state=inactive]:text-warm-gray-600"
-                  >
-                    <motion.span
-                      whileHover={{ scale: 1.08, rotate: 2 }}
-                      whileTap={{ scale: 0.92 }}
-                      className="flex flex-col items-center gap-1 text-center"
-                    >
-                      <span className="text-lg">🌟</span>
-                      <span className="text-xs font-bold">技能树</span>
-                    </motion.span>
-                  </TabsTrigger>
-                  
-                  <TabsTrigger 
-                    value="recommendations" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-purple data-[state=active]:to-duolingo-pink data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-purple/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-purple-subtle data-[state=inactive]:hover:text-duolingo-purple data-[state=inactive]:text-warm-gray-600"
+                    value="rewards" 
+                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-3 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-orange data-[state=active]:to-duolingo-orange-light data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-orange/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-orange-subtle data-[state=inactive]:hover:text-duolingo-orange-dark data-[state=inactive]:text-warm-gray-600"
                   >
                     <motion.span
                       whileHover={{ scale: 1.08, rotate: -2 }}
                       whileTap={{ scale: 0.92 }}
                       className="flex flex-col items-center gap-1 text-center"
                     >
-                      <span className="text-lg">🤖</span>
-                      <span className="text-xs font-bold">AI推荐</span>
+                      <span className="text-2xl">🎁</span>
+                      <span className="text-sm font-bold">兑换奖励</span>
                     </motion.span>
                   </TabsTrigger>
                   
                   <TabsTrigger 
                     value="achievements" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-yellow data-[state=active]:to-duolingo-orange data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-yellow/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-yellow-subtle data-[state=inactive]:hover:text-duolingo-orange-dark data-[state=inactive]:text-warm-gray-600"
+                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-3 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-yellow data-[state=active]:to-duolingo-orange data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-yellow/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-yellow-subtle data-[state=inactive]:hover:text-duolingo-orange-dark data-[state=inactive]:text-warm-gray-600"
                   >
                     <motion.span
                       whileHover={{ scale: 1.08, rotate: 2 }}
                       whileTap={{ scale: 0.92 }}
                       className="flex flex-col items-center gap-1 text-center"
                     >
-                      <span className="text-lg">🏅</span>
-                      <span className="text-xs font-bold">成就收集</span>
+                      <span className="text-2xl">🏅</span>
+                      <span className="text-sm font-bold">成就收集</span>
                     </motion.span>
                   </TabsTrigger>
                   
                   <TabsTrigger 
-                    value="social" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-pink data-[state=active]:to-duolingo-purple data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-pink/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-pink-subtle data-[state=inactive]:hover:text-duolingo-pink data-[state=inactive]:text-warm-gray-600"
-                  >
-                    <motion.span
-                      whileHover={{ scale: 1.08, rotate: -2 }}
-                      whileTap={{ scale: 0.92 }}
-                      className="flex flex-col items-center gap-1 text-center"
-                    >
-                      <span className="text-lg">👥</span>
-                      <span className="text-xs font-bold">社交中心</span>
-                    </motion.span>
-                  </TabsTrigger>
-                  
-                  <TabsTrigger 
-                    value="avatar" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-purple data-[state=active]:to-duolingo-pink data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-purple/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-purple-subtle data-[state=inactive]:hover:text-duolingo-purple data-[state=inactive]:text-warm-gray-600"
+                    value="skilltree" 
+                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-3 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-pink data-[state=active]:to-duolingo-purple data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-pink/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-pink-subtle data-[state=inactive]:hover:text-duolingo-purple data-[state=inactive]:text-warm-gray-600"
                   >
                     <motion.span
                       whileHover={{ scale: 1.08, rotate: 2 }}
                       whileTap={{ scale: 0.92 }}
                       className="flex flex-col items-center gap-1 text-center"
                     >
-                      <span className="text-lg">🎨</span>
-                      <span className="text-xs font-bold">头像定制</span>
-                    </motion.span>
-                  </TabsTrigger>
-                  
-                  <TabsTrigger 
-                    value="leaderboard" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-yellow data-[state=active]:to-duolingo-orange data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-yellow/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-yellow-subtle data-[state=inactive]:hover:text-duolingo-orange-dark data-[state=inactive]:text-warm-gray-600"
-                  >
-                    <motion.span
-                      whileHover={{ scale: 1.08, rotate: -2 }}
-                      whileTap={{ scale: 0.92 }}
-                      className="flex flex-col items-center gap-1 text-center"
-                    >
-                      <span className="text-lg">🏆</span>
-                      <span className="text-xs font-bold">家庭排行</span>
-                    </motion.span>
-                  </TabsTrigger>
-                  
-                  <TabsTrigger 
-                    value="collaboration" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-purple data-[state=active]:to-duolingo-pink data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-purple/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-purple-subtle data-[state=inactive]:hover:text-duolingo-purple data-[state=inactive]:text-warm-gray-600"
-                  >
-                    <motion.span
-                      whileHover={{ scale: 1.08, rotate: 2 }}
-                      whileTap={{ scale: 0.92 }}
-                      className="flex flex-col items-center gap-1 text-center"
-                    >
-                      <span className="text-lg">👨‍👩‍👧‍👦</span>
-                      <span className="text-xs font-bold">家庭协作</span>
-                    </motion.span>
-                  </TabsTrigger>
-
-                  <TabsTrigger 
-                    value="analytics" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-blue data-[state=active]:to-duolingo-purple data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-blue/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-blue-subtle data-[state=inactive]:hover:text-duolingo-blue data-[state=inactive]:text-warm-gray-600"
-                  >
-                    <motion.span
-                      whileHover={{ scale: 1.08, rotate: -2 }}
-                      whileTap={{ scale: 0.92 }}
-                      className="flex flex-col items-center gap-1 text-center"
-                    >
-                      <span className="text-lg">📊</span>
-                      <span className="text-xs font-bold">数据洞察</span>
-                    </motion.span>
-                  </TabsTrigger>
-
-                  <TabsTrigger 
-                    value="notifications" 
-                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-2 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-green data-[state=active]:to-duolingo-blue data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-green/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-green-subtle data-[state=inactive]:hover:text-duolingo-green data-[state=inactive]:text-warm-gray-600"
-                  >
-                    <motion.span
-                      whileHover={{ scale: 1.08, rotate: 2 }}
-                      whileTap={{ scale: 0.92 }}
-                      className="flex flex-col items-center gap-1 text-center relative"
-                    >
-                      <div className="relative">
-                        <span className="text-lg">🔔</span>
-                        {unreadNotificationCount > 0 && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                            {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-xs font-bold">通知中心</span>
+                      <span className="text-2xl">🌟</span>
+                      <span className="text-sm font-bold">技能成长</span>
                     </motion.span>
                   </TabsTrigger>
                 </TabsList>
               </motion.div>
 
               <TabsContent value="overview" className="space-y-6">
+                {/* 🏠 家庭主页欢迎区域 */}
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8 }}
+                  className="text-center mb-8"
+                >
+                  <Card className="bg-gradient-to-br from-duolingo-green-subtle via-white to-duolingo-blue-subtle border-4 border-duolingo-green/20 shadow-2xl rounded-[2rem] p-8 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-duolingo-yellow/10 rounded-full -translate-y-16 translate-x-16"></div>
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-duolingo-blue/10 rounded-full translate-y-12 -translate-x-12"></div>
+                    
+                    <motion.div
+                      initial={{ scale: 0.9 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                      className="relative z-10"
+                    >
+                      <div className="text-6xl mb-4">👋</div>
+                      <h2 className="text-3xl font-bold text-duolingo-green mb-2">
+                        欢迎回来，{studentData.name}！
+                      </h2>
+                      <p className="text-lg text-warm-gray-600 mb-4">
+                        今天是学习成长的好日子，一起来看看你的进步吧！
+                      </p>
+                      
+                      {/* 快速状态展示 */}
+                      <div className="flex justify-center items-center gap-8 mt-6">
+                        <div className="text-center">
+                          <div className="text-2xl font-black text-duolingo-green">
+                            {studentData.currentPoints}
+                          </div>
+                          <div className="text-sm text-warm-gray-500">总积分</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-black text-duolingo-blue">
+                            等级 {studentData.level}
+                          </div>
+                          <div className="text-sm text-warm-gray-500">当前等级</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-black text-duolingo-orange">
+                            {streakData.find(s => s.category === '学习')?.current || 0}天
+                          </div>
+                          <div className="text-sm text-warm-gray-500">学习连击</div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </Card>
+                </motion.div>
+
                 {/* 🎮 游戏化系统概览 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* 经验系统 */}
@@ -1684,31 +1682,6 @@ export default function App() {
                 />
               </TabsContent>
 
-              <TabsContent value="history">
-                <TaskHistorySection />
-              </TabsContent>
-
-              <TabsContent value="skilltree">
-                <SkillTree 
-                  skills={skillTreeData}
-                  onStartTask={handleStartTask}
-                  onUnlockSkill={handleUnlockSkill}
-                  userPoints={studentData.currentPoints}
-                />
-              </TabsContent>
-
-              <TabsContent value="recommendations">
-                <SmartRecommendations
-                  userAnalytics={userAnalytics}
-                  userLevel={experienceData.level}
-                  currentXP={experienceData.currentXP}
-                  availableTime={availableTime}
-                  onAcceptTask={handleAcceptRecommendedTask}
-                  onRejectTask={handleRejectRecommendedTask}
-                  onFeedback={handleTaskFeedback}
-                />
-              </TabsContent>
-
               <TabsContent value="achievements">
                 <AchievementSystem 
                   achievements={achievementsData}
@@ -1724,131 +1697,16 @@ export default function App() {
                 />
               </TabsContent>
 
-              <TabsContent value="social">
-                <SocialInteraction
-                  currentUserId={studentData.name === '小明' ? '1' : '2'}
-                  familyMembers={(familyMembers || []).map(member => ({
-                    ...member,
-                    avatar: member.name.charAt(0),
-                    level: experienceData.level,
-                    points: member.points,
-                    status: 'online' as const,
-                    role: member.name === '小明' || member.name === '小红' || member.name === '小强' ? 'child' as const : 'parent' as const,
-                    achievements: [],
-                    currentStreak: streakData[0]?.current || 0
-                  }))}
-                  socialPosts={socialData.posts}
-                  encouragements={socialData.encouragements}
-                  onLikePost={handleLikePost}
-                  onCommentPost={handleCommentPost}
-                  onSendEncouragement={handleSendEncouragement}
-                  onCreatePost={handleCreatePost}
-                />
-              </TabsContent>
-
-              <TabsContent value="avatar">
-                <PersonalizedAvatar
-                  currentAvatar={avatarData.current}
-                  availableItems={avatarData.items}
+              <TabsContent value="skilltree">
+                <SkillTree 
+                  skills={skillTreeData}
+                  onStartTask={handleStartTask}
+                  onUnlockSkill={handleUnlockSkill}
                   userPoints={studentData.currentPoints}
-                  userLevel={experienceData.level}
-                  onSaveAvatar={handleSaveAvatar}
-                  onUnlockItem={handleUnlockAvatarItem}
                 />
-              </TabsContent>
-
-              <TabsContent value="leaderboard">
-                <FamilyLeaderboardSection />
-              </TabsContent>
-
-              <TabsContent value="collaboration">
-                <FamilyCollaboration
-                  familyMembers={(familyMembers || []).map(member => ({
-                    ...member,
-                    avatar: member.name.charAt(0),
-                    level: experienceData.level,
-                    role: member.name === '小明' || member.name === '小红' || member.name === '小强' ? 'child' as const : 'parent' as const,
-                    isOnline: true
-                  }))}
-                  currentUserId={studentData.name === '小明' ? '1' : '2'}
-                  currentUserRole={currentUser === 'student' ? 'child' : 'parent'}
-                  collaborativeTasks={collaborativeTasks}
-                  familyChallenges={familyChallenges}
-                  onCreateTask={handleCreateCollaborativeTask}
-                  onJoinTask={handleJoinCollaborativeTask}
-                  onUpdateProgress={handleUpdateCollaborativeProgress}
-                  onCompleteTask={handleCompleteCollaborativeTask}
-                  onCreateChallenge={handleCreateFamilyChallenge}
-                  onJoinChallenge={handleJoinFamilyChallenge}
-                />
-              </TabsContent>
-
-              <TabsContent value="analytics">
-                <AnalyticsDashboard
-                  analyticsData={analyticsData}
-                  currentPeriod={currentPeriod}
-                  onPeriodChange={handlePeriodChange}
-                />
-              </TabsContent>
-
-              <TabsContent value="notifications">
-                <div className="text-center py-12">
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <div className="text-6xl mb-4">🔔</div>
-                    <p className="text-xl font-semibold text-warm-gray-600 mb-2">
-                      通知中心
-                    </p>
-                    <p className="text-warm-gray-500 mb-6">
-                      点击右上角的通知按钮查看所有通知和设置
-                    </p>
-                    
-                    {/* 快速通知统计 */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        className="p-4 bg-duolingo-green-subtle rounded-xl border-2 border-duolingo-green/30"
-                      >
-                        <div className="text-2xl font-black text-duolingo-green">{unreadNotificationCount}</div>
-                        <p className="text-sm text-warm-gray-600">未读消息</p>
-                      </motion.div>
-                      
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        className="p-4 bg-duolingo-blue-subtle rounded-xl border-2 border-duolingo-blue/30"
-                      >
-                        <div className="text-2xl font-black text-duolingo-blue">{notifications.length}</div>
-                        <p className="text-sm text-warm-gray-600">总通知数</p>
-                      </motion.div>
-                      
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        className="p-4 bg-duolingo-orange-subtle rounded-xl border-2 border-duolingo-orange/30"
-                      >
-                        <div className="text-2xl font-black text-duolingo-orange">
-                          {notifications.filter(n => n.isImportant).length}
-                        </div>
-                        <p className="text-sm text-warm-gray-600">重要通知</p>
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                </div>
               </TabsContent>
             </Tabs>
-          </div>
-        ) : (
-          /* 家长端界面 */
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <ParentDashboardSection />
-          </motion.div>
-        )}
+        </div>
 
         {/* 🎉 庆祝动画系统 */}
         <CelebrationEffect

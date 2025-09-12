@@ -32,32 +32,19 @@ class ApiClient {
   }
 
   private setupInterceptors(): void {
-    // Request interceptor
+    // Request interceptor - simplified for personal use
     this.axios.interceptors.request.use(
       (config) => {
-        // Add auth token to headers
         if (this.token) {
           config.headers.Authorization = `Bearer ${this.token}`;
         }
-
-        // Add idempotency key for certain operations
-        if (['post', 'put', 'patch'].includes(config.method?.toLowerCase() || '')) {
-          const idempotencyKey = this.generateIdempotencyKey();
-          config.headers['Idempotency-Key'] = idempotencyKey;
-        }
-
         return config;
-      },
-      (error) => {
-        return Promise.reject(error);
       }
     );
 
-    // Response interceptor
+    // Response interceptor - basic error handling
     this.axios.interceptors.response.use(
-      (response: AxiosResponse) => {
-        return response;
-      },
+      (response: AxiosResponse) => response,
       (error) => {
         this.handleError(error);
         return Promise.reject(error);
@@ -66,33 +53,18 @@ class ApiClient {
   }
 
   private handleError(error: any): void {
-    let message = 'An unexpected error occurred';
+    let message = 'Something went wrong';
 
-    if (error.response) {
-      // Server responded with error status
-      const { status, data } = error.response;
-      message = data?.message || data?.error || `HTTP ${status} Error`;
-
-      if (status === 401) {
-        // Unauthorized - clear token and redirect to login
-        this.clearToken();
-        message = 'Session expired. Please login again.';
-        // Note: In a real app, you'd redirect to login page here
-      } else if (status === 403) {
-        message = 'Access denied. You do not have permission for this action.';
-      } else if (status >= 500) {
-        message = 'Server error. Please try again later.';
-      }
-    } else if (error.request) {
-      // Network error
-      message = 'Network error. Please check your connection.';
+    if (error.response?.status === 401) {
+      this.clearToken();
+      message = 'Please login again';
+    } else if (error.response?.data?.message) {
+      message = error.response.data.message;
+    } else if (!error.response) {
+      message = 'Check your internet connection';
     }
 
     toast.error(message);
-  }
-
-  private generateIdempotencyKey(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   private loadTokenFromStorage(): void {
