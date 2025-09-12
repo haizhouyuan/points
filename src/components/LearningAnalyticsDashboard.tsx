@@ -273,9 +273,9 @@ export const LearningAnalyticsDashboard: React.FC<LearningAnalyticsDashboardProp
 
       {/* 核心指标卡片 */}
       {performanceMetrics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
           <motion.div
-            className="bg-gradient-to-br from-green-100 to-green-200 rounded-2xl p-6 border-2 border-green-300"
+            className="bg-gradient-to-br from-green-100 to-green-200 rounded-2xl p-4 md:p-6 border-2 border-green-300"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
@@ -289,7 +289,7 @@ export const LearningAnalyticsDashboard: React.FC<LearningAnalyticsDashboardProp
           </motion.div>
 
           <motion.div
-            className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl p-6 border-2 border-blue-300"
+            className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl p-4 md:p-6 border-2 border-blue-300"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
@@ -303,7 +303,7 @@ export const LearningAnalyticsDashboard: React.FC<LearningAnalyticsDashboardProp
           </motion.div>
 
           <motion.div
-            className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl p-6 border-2 border-orange-300"
+            className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl p-4 md:p-6 border-2 border-orange-300"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
@@ -317,7 +317,7 @@ export const LearningAnalyticsDashboard: React.FC<LearningAnalyticsDashboardProp
           </motion.div>
 
           <motion.div
-            className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl p-6 border-2 border-purple-300"
+            className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl p-4 md:p-6 border-2 border-purple-300"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
@@ -334,7 +334,7 @@ export const LearningAnalyticsDashboard: React.FC<LearningAnalyticsDashboardProp
 
       {/* 图表网格 */}
       {chartData && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8">
           {/* 学习趋势图 */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}

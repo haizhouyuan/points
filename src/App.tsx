@@ -24,6 +24,9 @@ import { AchievementService, DynamicAchievement, UserBehaviorProfile } from "./s
 import AchievementCard from "./components/AchievementCard";
 import AchievementNotification from "./components/AchievementNotification";
 import LearningAnalyticsDashboard from "./components/LearningAnalyticsDashboard";
+import { SmartRecommendations } from "./components/SmartRecommendations";
+import LearningPathPlanner from "./components/LearningPathPlanner";
+import LearningPathExecutor from "./components/LearningPathExecutor";
 import { ErrorBoundary, SectionErrorBoundary } from "./components/ErrorBoundary";
 
 export default function App() {
@@ -245,6 +248,15 @@ export default function App() {
 
   // ⏰ 用户当前可用时间
   const [availableTime, setAvailableTime] = useState(45); // 分钟
+  
+  // 🧭 Phase 2.4 - 高级学习路径规划系统状态
+  const [learningPathState, setLearningPathState] = useState<{
+    mode: 'planning' | 'executing' | null;
+    currentPathId: string | null;
+  }>({
+    mode: null,
+    currentPathId: null
+  });
 
   // 🏆 Phase 2 动态成就系统数据
   const [dynamicAchievements, setDynamicAchievements] = useState<DynamicAchievement[]>([]);
@@ -1032,6 +1044,59 @@ export default function App() {
     });
   };
 
+  // 🧭 Phase 2.4 - 学习路径规划处理函数
+  const handlePathSelected = (pathId: string) => {
+    setLearningPathState({
+      mode: 'executing',
+      currentPathId: pathId
+    });
+    
+    toast.success('🎯 学习路径已激活！', {
+      description: '开始你的个性化学习之旅',
+      duration: 4000,
+    });
+  };
+
+  const handleBackToPathPlanning = () => {
+    setLearningPathState({
+      mode: 'planning',
+      currentPathId: null
+    });
+  };
+
+  const handlePathComplete = () => {
+    setLearningPathState({
+      mode: null,
+      currentPathId: null
+    });
+    
+    // 增加积分奖励
+    setStudentData(prev => ({
+      ...prev,
+      currentPoints: prev.currentPoints + 1000
+    }));
+
+    // 显示完成庆祝
+    setCelebration({
+      show: true,
+      type: 'milestone',
+      message: '🎉 学习路径完成！',
+      subMessage: '获得1000积分奖励！你真棒！'
+    });
+
+    setTimeout(() => {
+      setCelebration(prev => ({ ...prev, show: false }));
+    }, 4000);
+  };
+
+  const handleStartPathPlanning = () => {
+    setLearningPathState({
+      mode: 'planning',
+      currentPathId: null
+    });
+    setCurrentTab('path-planning');
+  };
+
   // 🏆 Phase 2 动态成就系统处理函数
   const generatePersonalizedAchievements = () => {
     const newAchievements = AchievementService.generatePersonalizedAchievements(
@@ -1507,7 +1572,7 @@ export default function App() {
                 transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
                 className="mb-8"
               >
-                <TabsList className="grid w-full grid-cols-7 bg-gradient-to-r from-white via-warm-gray-50 to-white shadow-2xl rounded-[2rem] p-3 border-4 border-duolingo-green-subtle backdrop-blur-sm relative overflow-hidden min-h-20 h-auto">
+                <TabsList className="grid w-full grid-cols-9 bg-gradient-to-r from-white via-warm-gray-50 to-white shadow-2xl rounded-[2rem] p-3 border-4 border-duolingo-green-subtle backdrop-blur-sm relative overflow-hidden min-h-20 h-auto">
                   {/* 🎨 Duolingo 风格背景装饰 */}
                   <div className="absolute inset-0 bg-gradient-to-r from-duolingo-green-subtle/30 via-duolingo-blue-subtle/20 to-duolingo-purple-subtle/30 rounded-[2rem]"></div>
                   <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-duolingo-green via-duolingo-orange via-duolingo-blue to-duolingo-purple rounded-t-[2rem]"></div>
@@ -1612,6 +1677,34 @@ export default function App() {
                     >
                       <span className="text-2xl">📈</span>
                       <span className="text-sm font-bold">学习分析</span>
+                    </motion.span>
+                  </TabsTrigger>
+
+                  <TabsTrigger 
+                    value="recommendations" 
+                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-3 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-purple data-[state=active]:to-duolingo-pink data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-purple/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-purple-subtle data-[state=inactive]:hover:text-duolingo-purple data-[state=inactive]:text-warm-gray-600"
+                  >
+                    <motion.span
+                      whileHover={{ scale: 1.08, rotate: -2 }}
+                      whileTap={{ scale: 0.92 }}
+                      className="flex flex-col items-center gap-1 text-center"
+                    >
+                      <span className="text-2xl">🤖</span>
+                      <span className="text-sm font-bold">智能推荐</span>
+                    </motion.span>
+                  </TabsTrigger>
+
+                  <TabsTrigger 
+                    value="path-planning" 
+                    className="relative z-10 rounded-[1.25rem] font-bold py-4 px-3 transition-all duration-300 ease-out hover:scale-105 data-[state=active]:bg-gradient-to-br data-[state=active]:from-duolingo-green data-[state=active]:to-duolingo-blue data-[state=active]:text-white data-[state=active]:shadow-xl data-[state=active]:shadow-duolingo-green/40 data-[state=active]:scale-105 data-[state=inactive]:hover:bg-duolingo-green-subtle data-[state=inactive]:hover:text-duolingo-green-dark data-[state=inactive]:text-warm-gray-600"
+                  >
+                    <motion.span
+                      whileHover={{ scale: 1.08, rotate: 2 }}
+                      whileTap={{ scale: 0.92 }}
+                      className="flex flex-col items-center gap-1 text-center"
+                    >
+                      <span className="text-2xl">🧭</span>
+                      <span className="text-sm font-bold">学习路径</span>
                     </motion.span>
                   </TabsTrigger>
                 </TabsList>
@@ -1909,7 +2002,49 @@ export default function App() {
               </TabsContent>
 
               <TabsContent value="analytics" className="space-y-6">
-                <LearningAnalyticsDashboard />
+                <LearningAnalyticsDashboard
+                  userId="1"
+                  userStats={{
+                    currentPoints: studentData.currentPoints,
+                    currentXP: experienceData.currentXP,
+                    currentLevel: experienceData.level,
+                    tasksCompleted: 47 // TODO: 从 ActivityTracker 获取实际数据
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="recommendations" className="space-y-6">
+                <SectionErrorBoundary>
+                  <SmartRecommendations
+                    userAnalytics={userAnalytics}
+                    userLevel={studentData.level}
+                    currentXP={experienceData.currentXP}
+                    availableTime={availableTime}
+                    onAcceptTask={handleAcceptRecommendedTask}
+                    onRejectTask={handleRejectRecommendedTask}
+                    onFeedback={handleTaskFeedback}
+                  />
+                </SectionErrorBoundary>
+              </TabsContent>
+
+              {/* 🧠 学习路径规划 */}
+              <TabsContent value="path-planning" className="space-y-6">
+                <SectionErrorBoundary>
+                  {learningPathState.mode === 'executing' && learningPathState.currentPathId ? (
+                    <LearningPathExecutor
+                      pathId={learningPathState.currentPathId}
+                      userId="1"
+                      onPathComplete={handlePathComplete}
+                      onBackToPlanning={handleBackToPathPlanning}
+                    />
+                  ) : (
+                    <LearningPathPlanner
+                      userId="1"
+                      userLevel={studentData.level}
+                      onPathSelected={handlePathSelected}
+                    />
+                  )}
+                </SectionErrorBoundary>
               </TabsContent>
             </Tabs>
         </div>

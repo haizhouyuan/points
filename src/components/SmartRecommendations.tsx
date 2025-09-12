@@ -6,6 +6,10 @@ import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { toast } from 'sonner@2.0.3';
 import { Sparkles, Clock, TrendingUp, Target, Brain, Zap, ThumbsUp, ThumbsDown, Star } from 'lucide-react';
+import { RecommendationService, RecommendationResponse } from '../services/recommendation.service';
+import { BehaviorAnalysisService, BehaviorAnalysisResult } from '../services/behavior-analysis.service';
+import { Task } from '../types/task';
+import { User } from '../types/user';
 
 interface RecommendedTask {
   id: string;
@@ -33,7 +37,9 @@ interface UserAnalytics {
 }
 
 interface SmartRecommendationsProps {
-  userAnalytics: UserAnalytics;
+  user?: User;
+  availableTasks?: Task[];
+  userAnalytics?: UserAnalytics;
   userLevel: number;
   currentXP: number;
   availableTime: number; // 用户当前可用时间（分钟）
@@ -43,6 +49,8 @@ interface SmartRecommendationsProps {
 }
 
 export function SmartRecommendations({ 
+  user,
+  availableTasks = [],
   userAnalytics, 
   userLevel, 
   currentXP, 
@@ -55,110 +63,153 @@ export function SmartRecommendations({
   const [selectedTask, setSelectedTask] = useState<RecommendedTask | null>(null);
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [behaviorAnalysis, setBehaviorAnalysis] = useState<BehaviorAnalysisResult | null>(null);
+  const [recommendationResponse, setRecommendationResponse] = useState<RecommendationResponse | null>(null);
+
+  // 生成模拟数据
+  const generateMockData = () => {
+    const mockUser: User = user || {
+      id: 'user_1',
+      username: '小明',
+      email: 'xiaoming@example.com',
+      role: 'student' as any,
+      points: currentXP || 0
+    };
+
+    // 生成模拟学习会话
+    const mockSessions = Array.from({ length: 15 }, (_, i) => ({
+      id: `session_${i}`,
+      userId: mockUser.id,
+      taskId: `task_${i}`,
+      startTime: new Date(Date.now() - (15 - i) * 24 * 60 * 60 * 1000 + Math.random() * 8 * 60 * 60 * 1000),
+      endTime: new Date(Date.now() - (15 - i) * 24 * 60 * 60 * 1000 + Math.random() * 8 * 60 * 60 * 1000 + (20 + Math.random() * 40) * 60 * 1000),
+      duration: 20 + Math.random() * 40,
+      completed: Math.random() > 0.2,
+      difficulty: ['easy', 'medium', 'hard'][Math.floor(Math.random() * 3)],
+      category: ['exercise', 'reading', 'learning', 'creativity', 'chores'][Math.floor(Math.random() * 5)],
+      points: Math.floor(Math.random() * 100) + 20,
+      engagement: Math.random() * 2 + 3
+    }));
+
+    // 生成模拟任务
+    const mockTasks: Task[] = availableTasks.length > 0 ? availableTasks : [
+      {
+        id: 'task_1',
+        title: '数学口算练习',
+        description: '完成20道口算题，提升计算速度',
+        category: 'learning',
+        difficulty: 'easy',
+        points: 80,
+        estimatedDuration: 15,
+        requirements: [],
+        tags: ['数学', '口算'],
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 'task_2', 
+        title: '阅读科普文章',
+        description: '阅读一篇有趣的科普文章',
+        category: 'reading',
+        difficulty: 'medium',
+        points: 90,
+        estimatedDuration: 20,
+        requirements: [],
+        tags: ['阅读', '科普'],
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 'task_3',
+        title: '户外运动30分钟',
+        description: '进行30分钟户外运动',
+        category: 'exercise', 
+        difficulty: 'medium',
+        points: 120,
+        estimatedDuration: 30,
+        requirements: [],
+        tags: ['运动', '户外'],
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+
+    return { mockUser, mockSessions, mockTasks };
+  };
 
   // 生成智能推荐
-  const generateRecommendations = () => {
+  const generateRecommendations = async () => {
     setIsGenerating(true);
     
-    // 模拟AI分析和推荐生成
-    setTimeout(() => {
-      const newRecommendations: RecommendedTask[] = [
-        {
-          id: 'rec_1',
-          title: '数学计算练习',
-          description: '完成20道四则运算题，提升计算速度',
-          category: '学习',
-          difficulty: 'easy',
-          estimatedTime: 15,
-          xp: 50,
-          points: 80,
-          tags: ['数学', '基础', '练习'],
-          reason: '基于你在学习类任务中的出色表现，推荐这个适合你当前水平的数学练习',
-          confidence: 92,
-          bestTime: '上午9-11点',
-        },
-        {
-          id: 'rec_2',
-          title: '户外跑步30分钟',
-          description: '在小区或公园进行30分钟有氧跑步',
-          category: '运动',
-          difficulty: 'medium',
-          estimatedTime: 35,
-          xp: 80,
-          points: 120,
-          tags: ['跑步', '有氧', '户外'],
-          reason: '你的运动连击需要恢复，现在是下午，适合进行户外运动',
-          confidence: 85,
-          bestTime: '下午4-6点',
-        },
-        {
-          id: 'rec_3',
-          title: '整理书桌',
-          description: '清理和整理学习用的书桌，让学习环境更整洁',
-          category: '家务',
-          difficulty: 'easy',
-          estimatedTime: 10,
-          xp: 30,
-          points: 60,
-          tags: ['整理', '清洁', '学习环境'],
-          reason: '快速任务，可以在短时间内完成，为后续学习创造良好环境',
-          confidence: 78,
-          bestTime: '随时',
-        },
-        {
-          id: 'rec_4',
-          title: '阅读科普文章',
-          description: '阅读一篇有趣的科普文章，拓展知识面',
-          category: '阅读',
-          difficulty: 'medium',
-          estimatedTime: 20,
-          xp: 60,
-          points: 90,
-          tags: ['科普', '知识', '阅读'],
-          reason: '你在阅读方面表现优秀，推荐这个能继续提升你阅读技能的任务',
-          confidence: 88,
-          bestTime: '晚上7-9点',
-        },
-        {
-          id: 'rec_5',
-          title: '学习新单词',
-          description: '学习并记忆10个新英语单词',
-          category: '学习',
-          difficulty: 'medium',
-          estimatedTime: 25,
-          xp: 70,
-          points: 100,
-          tags: ['英语', '单词', '记忆'],
-          reason: '基于你的学习偏好和当前等级，推荐这个能快速提升的语言任务',
-          confidence: 90,
-          bestTime: '上午8-10点',
-        }
-      ];
-
-      // 根据用户分析筛选和排序推荐
-      const filteredRecommendations = newRecommendations
-        .filter(task => task.estimatedTime <= availableTime + 10) // 允许10分钟缓冲
-        .sort((a, b) => {
-          // 优先推荐用户偏好的类别
-          const aPreferred = userAnalytics.preferredCategories.includes(a.category) ? 1 : 0;
-          const bPreferred = userAnalytics.preferredCategories.includes(b.category) ? 1 : 0;
-          
-          if (aPreferred !== bPreferred) return bPreferred - aPreferred;
-          
-          // 然后按置信度排序
-          return b.confidence - a.confidence;
-        })
-        .slice(0, 4); // 最多显示4个推荐
-
-      setRecommendations(filteredRecommendations);
+    try {
+      const { mockUser, mockSessions, mockTasks } = generateMockData();
+      
+      // 生成行为分析
+      const analysis = BehaviorAnalysisService.analyzeUserBehavior(mockSessions);
+      setBehaviorAnalysis(analysis);
+      
+      // 生成用户行为数据
+      const behaviorData = BehaviorAnalysisService.generateUserBehaviorFromHistory(
+        mockUser,
+        mockSessions.filter(s => s.completed).map(s => ({
+          id: s.taskId,
+          title: `任务 ${s.taskId}`,
+          description: '模拟任务',
+          category: s.category,
+          difficulty: s.difficulty,
+          points: s.points,
+          estimatedDuration: s.duration,
+          requirements: [],
+          tags: [],
+          isActive: true,
+          createdAt: s.startTime,
+          updatedAt: s.endTime
+        })),
+        mockSessions
+      );
+      
+      // 生成推荐
+      const response = RecommendationService.generateRecommendations(
+        mockUser,
+        behaviorData,
+        mockTasks
+      );
+      setRecommendationResponse(response);
+      
+      // 转换为组件格式
+      const convertedRecommendations: RecommendedTask[] = response.recommendations.map(rec => ({
+        id: rec.task.id,
+        title: rec.task.title,
+        description: rec.task.description,
+        category: rec.task.category,
+        difficulty: rec.task.difficulty as 'easy' | 'medium' | 'hard',
+        estimatedTime: rec.task.estimatedDuration,
+        xp: Math.round(rec.task.points * 0.8), // XP通常比积分少一些
+        points: rec.task.points,
+        tags: rec.task.tags,
+        reason: rec.reason,
+        confidence: Math.round(rec.confidence * 100),
+        bestTime: rec.estimatedEngagement > 0.8 ? '黄金时间' : '任意时间'
+      }));
+      
+      setRecommendations(convertedRecommendations);
+      
+    } catch (error) {
+      console.error('推荐生成失败:', error);
+      // 回退到简单推荐
+      setRecommendations([]);
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
 
   // 组件加载时生成推荐
   useEffect(() => {
     generateRecommendations();
-  }, [userAnalytics, availableTime]);
+  }, [user, availableTasks, userAnalytics, availableTime]);
 
   // 获取难度配置
   const getDifficultyConfig = (difficulty: string) => {
@@ -468,6 +519,131 @@ export function SmartRecommendations({
           </div>
         )}
       </AnimatePresence>
+
+      {/* 🧠 个性化洞察面板 */}
+      {behaviorAnalysis && recommendationResponse && (
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8"
+        >
+          <Card className="bg-gradient-to-br from-duolingo-blue-subtle via-white to-duolingo-purple-subtle border-4 border-duolingo-blue/40 shadow-xl rounded-[2rem] overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-xl font-black">
+                <Brain className="w-6 h-6 text-duolingo-blue" />
+                <span className="bg-gradient-to-r from-duolingo-blue to-duolingo-purple bg-clip-text text-transparent">
+                  个性化学习洞察
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* 学习目标 */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-duolingo-green-subtle rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="w-5 h-5 text-duolingo-green" />
+                    <h3 className="font-bold text-duolingo-green">当前目标</h3>
+                  </div>
+                  <p className="text-warm-gray-700 text-sm">{recommendationResponse.learningGoal}</p>
+                </div>
+                <div className="bg-duolingo-orange-subtle rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Star className="w-5 h-5 text-duolingo-orange" />
+                    <h3 className="font-bold text-duolingo-orange">下个里程碑</h3>
+                  </div>
+                  <p className="text-warm-gray-700 text-sm">{recommendationResponse.nextMilestone}</p>
+                </div>
+              </div>
+
+              {/* 学习画像 */}
+              <div className="bg-white rounded-2xl p-4 border-2 border-warm-gray-200">
+                <h3 className="font-bold text-warm-gray-800 mb-3 flex items-center gap-2">
+                  <div className="text-2xl">👤</div>
+                  你的学习画像
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4 text-sm">
+                  <div className="text-center p-3 bg-duolingo-purple-subtle rounded-xl">
+                    <div className="font-bold text-duolingo-purple">学习风格</div>
+                    <div className="text-warm-gray-700 mt-1">
+                      {{
+                        'visual': '视觉型 👁️',
+                        'auditory': '听觉型 👂',
+                        'kinesthetic': '动手型 ✋',
+                        'mixed': '综合型 🌟'
+                      }[behaviorAnalysis.userProfile.learningStyle]}
+                    </div>
+                  </div>
+                  <div className="text-center p-3 bg-duolingo-blue-subtle rounded-xl">
+                    <div className="font-bold text-duolingo-blue">动机类型</div>
+                    <div className="text-warm-gray-700 mt-1">
+                      {{
+                        'achievement': '成就导向 🏆',
+                        'social': '社交导向 👥',
+                        'mastery': '掌握导向 📚',
+                        'autonomy': '自主导向 🎯'
+                      }[behaviorAnalysis.userProfile.motivationType]}
+                    </div>
+                  </div>
+                  <div className="text-center p-3 bg-duolingo-green-subtle rounded-xl">
+                    <div className="font-bold text-duolingo-green">一致性得分</div>
+                    <div className="text-warm-gray-700 mt-1">
+                      {behaviorAnalysis.userProfile.consistencyScore}/100 📊
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 行为建议 */}
+              {behaviorAnalysis.recommendations.length > 0 && (
+                <div className="bg-duolingo-pink-subtle rounded-2xl p-4">
+                  <h3 className="font-bold text-duolingo-pink mb-3 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5" />
+                    AI 个性化建议
+                  </h3>
+                  <div className="space-y-2">
+                    {behaviorAnalysis.recommendations.slice(0, 3).map((suggestion, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm text-warm-gray-700">
+                        <div className="w-2 h-2 bg-duolingo-pink rounded-full mt-2 flex-shrink-0" />
+                        <span>{suggestion}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 学习模式分析 */}
+              {behaviorAnalysis.learningPatterns.length > 0 && (
+                <div className="bg-warm-gray-50 rounded-2xl p-4">
+                  <h3 className="font-bold text-warm-gray-800 mb-3 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-warm-gray-600" />
+                    发现的学习模式
+                  </h3>
+                  <div className="grid gap-3">
+                    {behaviorAnalysis.learningPatterns.slice(0, 2).map((pattern, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-white rounded-xl border border-warm-gray-200">
+                        <div>
+                          <div className="font-medium text-warm-gray-800">{pattern.pattern}</div>
+                          <div className="text-xs text-warm-gray-600 mt-1">{pattern.recommendation}</div>
+                        </div>
+                        <Badge 
+                          className={`${
+                            pattern.impact === 'high' ? 'bg-duolingo-green text-white' :
+                            pattern.impact === 'medium' ? 'bg-duolingo-orange text-white' :
+                            'bg-warm-gray-200 text-warm-gray-700'
+                          } border-0`}
+                        >
+                          {pattern.impact === 'high' ? '高影响' : pattern.impact === 'medium' ? '中影响' : '低影响'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }

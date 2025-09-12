@@ -39,16 +39,30 @@ export const LearningAnalyticsChart: React.FC<LearningAnalyticsChartProps> = ({
   showValues = true,
   animate = true
 }) => {
+  const [containerWidth, setContainerWidth] = React.useState(600);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  
+  React.useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth - 48); // 减去padding
+      }
+    };
+    
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+  
   const maxValue = Math.max(...data.map(d => d.value));
   const minValue = Math.min(...data.map(d => d.value));
   
   // 线图组件
   const LineChart: React.FC = () => {
-    const width = 600;
     const chartHeight = height - 80;
     const padding = 60;
     
-    const xStep = (width - 2 * padding) / Math.max(data.length - 1, 1);
+    const xStep = (containerWidth - 2 * padding) / Math.max(data.length - 1, 1);
     const yScale = (chartHeight - 2 * padding) / (maxValue - minValue || 1);
     
     const points = data.map((point, index) => {
@@ -59,7 +73,7 @@ export const LearningAnalyticsChart: React.FC<LearningAnalyticsChartProps> = ({
     
     return (
       <div className="relative">
-        <svg width={width} height={height} className="overflow-visible">
+        <svg width={containerWidth} height={height} className="overflow-visible">
           {/* 网格线 */}
           <defs>
             <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -149,24 +163,23 @@ export const LearningAnalyticsChart: React.FC<LearningAnalyticsChartProps> = ({
   
   // 柱状图组件
   const BarChart: React.FC = () => {
-    const width = 600;
     const chartHeight = height - 80;
     const padding = 60;
     
-    const barWidth = (width - 2 * padding) / data.length * 0.7;
-    const barSpacing = (width - 2 * padding) / data.length * 0.3;
+    const barWidth = (containerWidth - 2 * padding) / data.length * 0.7;
+    const barSpacing = (containerWidth - 2 * padding) / data.length * 0.3;
     const yScale = (chartHeight - 2 * padding) / maxValue;
     
     return (
       <div className="relative">
-        <svg width={width} height={height} className="overflow-visible">
+        <svg width={containerWidth} height={height} className="overflow-visible">
           {/* Y轴标签 */}
           {[0, 0.25, 0.5, 0.75, 1].map((ratio, index) => {
             const y = chartHeight - padding - ratio * (chartHeight - 2 * padding);
             const value = Math.round(ratio * maxValue);
             return (
               <g key={index}>
-                <line x1={padding - 5} y1={y} x2={width - padding} y2={y} stroke="#e5e7eb" strokeWidth="1" opacity="0.5"/>
+                <line x1={padding - 5} y1={y} x2={containerWidth - padding} y2={y} stroke="#e5e7eb" strokeWidth="1" opacity="0.5"/>
                 <text x={padding - 10} y={y + 4} textAnchor="end" className="text-xs fill-gray-600">
                   {value}
                 </text>
@@ -551,6 +564,7 @@ export const LearningAnalyticsChart: React.FC<LearningAnalyticsChartProps> = ({
   
   return (
     <motion.div 
+      ref={containerRef}
       className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
       initial={animate ? { opacity: 0, y: 20 } : {}}
       animate={animate ? { opacity: 1, y: 0 } : {}}

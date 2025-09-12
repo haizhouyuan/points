@@ -465,11 +465,16 @@ export class AnalyticsService {
     
     const scores = sessions.map(s => s.completionRate);
     const mean = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    
+    // 防护：如果均值为0或接近0，返回0
+    if (mean <= 0.001) return 0;
+    
     const variance = scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length;
     const standardDeviation = Math.sqrt(variance);
     
     // 一致性指数：标准差越小，一致性越高
-    return Math.max(0, 100 - (standardDeviation / mean) * 100);
+    const consistencyValue = 100 - (standardDeviation / mean) * 100;
+    return Math.max(0, Math.min(100, consistencyValue));
   }
   
   private static calculateImprovementTrend(sessions: LearningSession[]): 'declining' | 'stable' | 'improving' {
@@ -481,7 +486,15 @@ export class AnalyticsService {
     const recentAvg = recent.reduce((sum, s) => sum + s.completionRate, 0) / recent.length;
     const earlierAvg = earlier.reduce((sum, s) => sum + s.completionRate, 0) / earlier.length;
     
+    // 防护：如果早期平均值为0或接近0，返回稳定
+    if (earlierAvg <= 0.001) {
+      return recentAvg > 10 ? 'improving' : 'stable';
+    }
+    
     const improvementPercent = ((recentAvg - earlierAvg) / earlierAvg) * 100;
+    
+    // 确保结果是有限数值
+    if (!isFinite(improvementPercent)) return 'stable';
     
     if (improvementPercent > 5) return 'improving';
     if (improvementPercent < -5) return 'declining';
@@ -759,9 +772,21 @@ export class AnalyticsService {
       }
     }
     
-    overallAvg = overallAvg / totalCount;
-    const advantagePercent = Math.round(((bestCategory.avgScore - overallAvg) / overallAvg) * 100);
-    const confidence = Math.min((bestCategory.count / totalCount) * 100, 100);
+    // 防护：totalCount为0或接近0时的处理
+    let advantagePercent = 0;
+    let confidence = 0;
+    
+    if (totalCount <= 0) {
+      overallAvg = 0;
+      advantagePercent = 0;
+      confidence = 0;
+    } else {
+      overallAvg = overallAvg / totalCount;
+      // 防护：如果整体平均值为0或接近0，返回0优势
+      advantagePercent = overallAvg <= 0.001 ? 0 : 
+        Math.round(((bestCategory.avgScore - overallAvg) / overallAvg) * 100);
+      confidence = Math.min((bestCategory.count / totalCount) * 100, 100);
+    }
     
     return {
       preferredCategory: bestCategory.category,
