@@ -4,8 +4,9 @@ import {
   LearningPathService, 
   LearningPath,
   LearningPathNode,
-  PathAdaptation
-} from '../services/learning-path.service';
+  PathAdaptation,
+  PathProgress
+} from '@/services/learning-path.service';
 
 interface LearningPathExecutorProps {
   pathId: string;
@@ -28,7 +29,7 @@ export const LearningPathExecutor: React.FC<LearningPathExecutorProps> = ({
   onPathComplete,
   onBackToPlanning
 }) => {
-  const [pathProgress, setPathProgress] = useState<any>(null);
+  const [pathProgress, setPathProgress] = useState<PathProgress | null>(null);
   const [currentNode, setCurrentNode] = useState<LearningPathNode | null>(null);
   const [nodeProgresses, setNodeProgresses] = useState<NodeProgress[]>([]);
   const [isLearning, setIsLearning] = useState(false);

@@ -1,5 +1,4 @@
-import { Task } from '../types/task';
-import { User } from '../types/user';
+import { TaskLite as Task, UserLite as User } from '@/services/types';
 
 export interface UserBehaviorData {
   userId: string;

@@ -6,10 +6,9 @@ import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { toast } from 'sonner';
 import { Sparkles, Clock, TrendingUp, Target, Brain, Zap, ThumbsUp, ThumbsDown, Star } from 'lucide-react';
-import { RecommendationService, RecommendationResponse } from '../services/recommendation.service';
-import { BehaviorAnalysisService, BehaviorAnalysisResult } from '../services/behavior-analysis.service';
-import { Task } from '../types/task';
-import { User } from '../types/user';
+import { RecommendationService, RecommendationResponse } from '@/services/recommendation.service';
+import { BehaviorAnalysisService, BehaviorAnalysisResult } from '@/services/behavior-analysis.service';
+import { TaskLite as Task, UserLite as User } from '@/services/types';
 
 interface RecommendedTask {
   id: string;

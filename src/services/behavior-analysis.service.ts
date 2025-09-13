@@ -1,5 +1,4 @@
-import { Task } from '../types/task';
-import { User } from '../types/user';
+import { TaskLite as Task, UserLite as User } from '@/services/types';
 import { UserBehaviorData } from './recommendation.service';
 
 export interface LearningSession {
@@ -432,14 +431,24 @@ export class BehaviorAnalysisService {
    */
   private static predictCompletionRate(sessions: LearningSession[]): BehaviorPrediction {
     const recentSessions = sessions.slice(-14); // 最近14次
+    if (recentSessions.length === 0) {
+      return {
+        metric: '任务完成率',
+        currentValue: 0,
+        predictedValue: 0,
+        confidence: 0.4,
+        timeframe: '1_week',
+        factors: ['样本不足，等待更多学习数据']
+      };
+    }
     const currentRate = recentSessions.filter(s => s.completed).length / recentSessions.length;
     
     // 基于趋势预测
     const firstHalf = recentSessions.slice(0, 7);
     const secondHalf = recentSessions.slice(7);
     
-    const firstHalfRate = firstHalf.filter(s => s.completed).length / firstHalf.length;
-    const secondHalfRate = secondHalf.filter(s => s.completed).length / secondHalf.length;
+    const firstHalfRate = firstHalf.length > 0 ? firstHalf.filter(s => s.completed).length / firstHalf.length : 0;
+    const secondHalfRate = secondHalf.length > 0 ? secondHalf.filter(s => s.completed).length / secondHalf.length : 0;
     
     const trend = secondHalfRate - firstHalfRate;
     const predictedRate = Math.max(0, Math.min(1, currentRate + trend * 0.5));

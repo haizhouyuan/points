@@ -338,3 +338,32 @@ export interface ListOptions {
   sortOrder?: 'asc' | 'desc';
   filter?: Record<string, any>;
 }
+
+// =========================
+// Lightweight Types for Recommendation/Behavior modules
+// =========================
+// 精简版 Task 与 User，用于前端智能推荐/行为分析模块，避免与后端模型强耦合
+export type SimpleTaskDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface TaskLite {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  difficulty: SimpleTaskDifficulty;
+  points: number;
+  estimatedDuration: number; // minutes
+  requirements: string[];
+  tags: string[];
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserLite {
+  id: string;
+  username: string;
+  email: string;
+  role: 'student' | 'parent';
+  points: number;
+}

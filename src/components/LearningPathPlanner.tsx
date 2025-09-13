@@ -6,7 +6,7 @@ import {
   SmartRecommendation,
   LearningPath,
   LearningPathNode
-} from '../services/learning-path.service';
+} from '@/services/learning-path.service';
 
 interface LearningPathPlannerProps {
   userId: string;
@@ -16,12 +16,12 @@ interface LearningPathPlannerProps {
 
 // 技能选项
 const SKILL_OPTIONS = [
-  { id: 'math', label: '数学', icon: '🔢', description: '数字运算与逻辑思维' },
-  { id: 'english', label: '英语', icon: '🌍', description: '语言交流与表达能力' },
-  { id: 'reading', label: '阅读', icon: '📚', description: '阅读理解与分析能力' },
-  { id: 'science', label: '科学', icon: '🔬', description: '科学探索与实验能力' },
-  { id: 'art', label: '艺术', icon: '🎨', description: '创意表达与审美能力' },
-  { id: 'coding', label: '编程', icon: '💻', description: '逻辑编程与问题解决' }
+  { id: '数学', label: '数学', icon: '🔢', description: '数字运算与逻辑思维' },
+  { id: '英语', label: '英语', icon: '🌍', description: '语言交流与表达能力' },
+  { id: '阅读', label: '阅读', icon: '📚', description: '阅读理解与分析能力' },
+  { id: '科学', label: '科学', icon: '🔬', description: '科学探索与实验能力' },
+  { id: '艺术', label: '艺术', icon: '🎨', description: '创意表达与审美能力' },
+  { id: '编程', label: '编程', icon: '💻', description: '逻辑编程与问题解决' }
 ];
 
 // 学习目标选项

@@ -123,6 +123,15 @@ export interface SmartRecommendation {
   personalizedBenefits: string[];
 }
 
+// 路径进度类型（供执行器与规划器使用）
+export interface PathProgress {
+  path: LearningPath;
+  currentProgress: number;
+  estimatedTimeRemaining: number;
+  nextRecommendations: LearningPathNode[];
+  adaptationSuggestions: string[];
+}
+
 export class LearningPathService {
   private static pathCache = new Map<string, LearningPath>();
   private static nodeLibrary: LearningPathNode[] = [];
@@ -477,12 +486,14 @@ export class LearningPathService {
       const skillMatch = node.skills.some(skill => 
         targetSkills.some(target => skill.includes(target) || target.includes(skill))
       );
+      // 类别兜底匹配（与 Planner 中文类别一致）
+      const categoryMatch = targetSkills.includes(node.category);
       
       // 检查难度适合度
       const difficultyScore = { easy: 1, medium: 2, hard: 3 }[node.difficulty];
       const levelMatch = difficultyScore <= currentLevel + 1;
       
-      return skillMatch && levelMatch;
+      return (skillMatch || categoryMatch) && levelMatch;
     });
   }
   
@@ -560,7 +571,68 @@ export class LearningPathService {
       }
     }
     
-    return optimizedPath.sort((a, b) => b.adaptiveWeight - a.adaptiveWeight);
+    return this.prioritizedTopologicalOrder(optimizedPath);
+  }
+
+  /**
+   * 基于自适应权重的优先队列拓扑排序：保证依赖正确的同时尽量优先高权重节点
+   */
+  private static prioritizedTopologicalOrder(nodes: LearningPathNode[]): LearningPathNode[] {
+    const idSet = new Set(nodes.map(n => n.id));
+    const inDegree = new Map<string, number>();
+    const adj = new Map<string, string[]>();
+    const nodeMap = new Map(nodes.map(n => [n.id, n] as const));
+
+    nodes.forEach(n => {
+      inDegree.set(n.id, 0);
+      adj.set(n.id, []);
+    });
+
+    // 构建前置 -> 当前 的边
+    nodes.forEach(n => {
+      n.prerequisiteNodes.forEach(pre => {
+        if (idSet.has(pre)) {
+          inDegree.set(n.id, (inDegree.get(n.id) || 0) + 1);
+          adj.get(pre)!.push(n.id);
+        }
+      });
+    });
+
+    // 候选集合（入度为0）
+    const available: string[] = nodes.filter(n => (inDegree.get(n.id) || 0) === 0).map(n => n.id);
+    const result: LearningPathNode[] = [];
+
+    const pickMax = () => {
+      if (available.length === 0) return null as string | null;
+      let bestIdx = 0;
+      let best = -Infinity;
+      for (let i = 0; i < available.length; i++) {
+        const s = nodeMap.get(available[i])!.adaptiveWeight;
+        if (s > best) { best = s; bestIdx = i; }
+      }
+      const [chosen] = available.splice(bestIdx, 1);
+      return chosen;
+    };
+
+    let chosen = pickMax();
+    const guardMax = nodes.length * 3;
+    let guard = 0;
+    while (chosen && guard < guardMax) {
+      result.push(nodeMap.get(chosen)!);
+      (adj.get(chosen) || []).forEach(next => {
+        inDegree.set(next, (inDegree.get(next) || 0) - 1);
+        if ((inDegree.get(next) || 0) === 0) available.push(next);
+      });
+      chosen = pickMax();
+      guard++;
+    }
+
+    if (result.length < nodes.length) {
+      const picked = new Set(result.map(n => n.id));
+      nodes.forEach(n => { if (!picked.has(n.id)) result.push(n); });
+    }
+
+    return result;
   }
   
   /**
@@ -616,13 +688,7 @@ export class LearningPathService {
   /**
    * 获取路径进度和统计
    */
-  static getPathProgress(pathId: string): {
-    path: LearningPath;
-    currentProgress: number;
-    estimatedTimeRemaining: number;
-    nextRecommendations: LearningPathNode[];
-    adaptationSuggestions: string[];
-  } | null {
+  static getPathProgress(pathId: string): PathProgress | null {
     const path = this.pathCache.get(pathId);
     if (!path) return null;
     
@@ -657,6 +723,7 @@ export class LearningPathService {
     
     const scores = history.map(s => s.completionRate);
     const mean = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    if (mean <= 0.001 || !isFinite(mean)) return 0.6;
     const variance = scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length;
     const standardDeviation = Math.sqrt(variance);
     
@@ -704,7 +771,9 @@ export class LearningPathService {
         const firstAvg = firstHalf.reduce((sum, score) => sum + score, 0) / firstHalf.length;
         const secondAvg = secondHalf.reduce((sum, score) => sum + score, 0) / secondHalf.length;
         
-        totalImprovement += (secondAvg - firstAvg) / firstAvg;
+        if (firstAvg > 0.001) {
+          totalImprovement += (secondAvg - firstAvg) / firstAvg;
+        }
         categoryCount++;
       }
     }
@@ -735,8 +804,8 @@ export class LearningPathService {
     const targetDate = new Date(config.timeConstraint);
     const now = new Date();
     const weeksAvailable = Math.floor((targetDate.getTime() - now.getTime()) / (7 * 24 * 60 * 60 * 1000));
-    
-    return weeksAvailable * config.availableTimePerWeek * 60; // 转换为分钟
+    const nonNegativeWeeks = Math.max(0, weeksAvailable);
+    return nonNegativeWeeks * config.availableTimePerWeek * 60; // 转换为分钟
   }
   
   private static trimPathToTimeLimit(path: LearningPathNode[], maxTime: number): LearningPathNode[] {
