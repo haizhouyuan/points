@@ -4,8 +4,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Build output
-build
+# Build output (only exclude final build output, not source)
 dist
 
 # Environment files
@@ -31,7 +30,6 @@ Thumbs.db
 .gitignore
 
 # Docker files
-Dockerfile
 docker-compose*.yml
 .dockerignore
 
@@ -57,3 +55,8 @@ coverage/
 # Temporary
 tmp/
 temp/
+
+# Backend (since this is frontend only)
+backend/
+backups/
+scripts/
