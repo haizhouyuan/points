@@ -1,0 +1,110 @@
+name: Deploy to Production
+
+# 手动触发部署
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "部署的镜像标签（默认 sha-latest）"
+        required: false
+        default: "sha-latest"
+        type: string
+      environment:
+        description: "部署环境"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy:
+    # 指定在 GitHub Environment 下运行，以访问部署Secrets
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: 🛎️ 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🚀 部署到服务器
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -e
+            
+            echo "🚀 开始部署 Points 应用..."
+            echo "📦 镜像标签: ${{ github.event.inputs.tag }}"
+            echo "🌍 部署环境: ${{ github.event.inputs.environment }}"
+            
+            # 登录 GHCR 仓库
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            
+            # 拉取指定标签的 Points 镜像
+            IMAGE_URL="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.tag }}"
+            echo "📥 拉取镜像: $IMAGE_URL"
+            docker pull $IMAGE_URL
+            
+            # 停止并移除旧容器
+            echo "🛑 停止旧容器..."
+            docker rm -f points-app || true
+            
+            # 以新镜像启动容器（映射到主机5001端口）
+            echo "🏃 启动新容器..."
+            docker run -d \
+              --name points-app \
+              --restart unless-stopped \
+              -p 5001:80 \
+              -e NODE_ENV=production \
+              $IMAGE_URL
+            
+            # 等待容器启动并进行健康检查
+            echo "⏳ 等待容器启动..."
+            sleep 10
+            
+            # 验证容器状态
+            if docker ps | grep -q "points-app"; then
+              echo "✅ 容器已启动"
+              
+              # 健康检查
+              echo "🔍 执行健康检查..."
+              if curl -f http://localhost:5001 -o /dev/null -s; then
+                echo "✅ 健康检查通过 - Points 应用正常运行"
+                echo "🌐 应用访问地址: http://localhost:5001"
+              else
+                echo "❌ 健康检查失败"
+                docker logs points-app
+                exit 1
+              fi
+            else
+              echo "❌ 容器启动失败"
+              docker logs points-app || true
+              exit 1
+            fi
+            
+            # 清理旧镜像（保留最近3个版本）
+            echo "🧹 清理旧镜像..."
+            docker images "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" --format "table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}" | \
+            tail -n +2 | sort -k2 -r | tail -n +4 | awk '{print $1}' | xargs -r docker rmi || true
+            
+            echo "🎉 部署完成！"
+
+      - name: 📊 部署结果通知
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Points 应用部署成功"
+            echo "🏷️ 镜像标签: ${{ github.event.inputs.tag }}"
+            echo "🌍 部署环境: ${{ github.event.inputs.environment }}"
+          else
+            echo "❌ Points 应用部署失败"
+            echo "请检查服务器日志和容器状态"
+          fi

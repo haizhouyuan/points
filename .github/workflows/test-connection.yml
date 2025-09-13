@@ -1,0 +1,35 @@
+name: Test Server Connection
+
+# 手动触发测试连接
+on:
+  workflow_dispatch:
+
+jobs:
+  test-connection:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: 🔍 测试服务器连接
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            echo "🎉 SSH连接成功！"
+            echo "服务器信息："
+            echo "- 主机名: $(hostname)"
+            echo "- 用户: $(whoami)"
+            echo "- Docker版本: $(docker --version 2>/dev/null || echo 'Docker未安装')"
+            echo "- 系统信息: $(uname -a)"
+            echo "- 磁盘使用: $(df -h / | tail -1)"
+            echo "- 内存使用: $(free -h | head -2)"
+            
+            # 检查5001端口是否被占用
+            if netstat -tlnp 2>/dev/null | grep -q :5001; then
+              echo "⚠️  端口5001已被占用："
+              netstat -tlnp | grep :5001
+            else
+              echo "✅ 端口5001可用"
+            fi

@@ -1,0 +1,28 @@
+name: points             # 项目Compose命名空间
+
+networks:
+  points-net:
+    driver: bridge
+
+services:
+  app:
+    container_name: points-app
+    # 镜像来源（默认使用GHCR镜像，可通过APP_TAG指定特定tag）
+    image: ghcr.io/haizhouyuan/points:${APP_TAG:-sha-latest}
+    # 如需本地构建测试，可改用以下build配置
+    # build: .
+    env_file:
+      - .env            # 载入环境变量配置
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "${APP_PORT:-5001}:80"   # 将容器80端口映射到主机端口（默认5001）
+    networks:
+      - points-net
+    restart: unless-stopped
+    # 前端应用无特殊健康检查端点，可选配简单的HTTP检查
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

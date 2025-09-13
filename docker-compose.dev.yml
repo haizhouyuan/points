@@ -1,0 +1,20 @@
+# 开发模式 Docker Compose 覆盖配置
+# 使用方法: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  app:
+    image: node:18-alpine        # 开发模式使用 Node 镜像直接运行开发服务器
+    working_dir: /app
+    container_name: points-dev
+    environment:
+      - NODE_ENV=development
+      - VITE_HMR_PORT=3000
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    volumes:
+      - .:/app                   # 挂载源码以实现热更新
+      - /app/node_modules        # 匿名卷避免覆盖依赖
+    ports:
+      - "3000:3000"              # 开发服务器端口
+    # 开发模式不需要健康检查
+    healthcheck:
+      disable: true
