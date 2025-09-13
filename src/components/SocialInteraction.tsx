@@ -8,7 +8,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { Heart, MessageCircle, ThumbsUp, Gift, Star, Send, Users, Zap, Crown, Medal, Sparkles, Trophy, Camera, Mic } from 'lucide-react';
 
 interface FamilyMember {

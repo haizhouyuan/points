@@ -18,9 +18,10 @@ interface HabitStreak {
 interface HabitTrackerProps {
   habits: HabitStreak[];
   onClaimReward: (category: string, milestone: number) => void;
+  claimingCategory?: string | null;
 }
 
-export function HabitTracker({ habits, onClaimReward }: HabitTrackerProps) {
+export function HabitTracker({ habits, onClaimReward, claimingCategory }: HabitTrackerProps) {
   const getStreakLevel = (streak: number) => {
     if (streak >= 100) return { 
       level: "传奇大师", 
@@ -226,7 +227,12 @@ export function HabitTracker({ habits, onClaimReward }: HabitTrackerProps) {
                             whileHover={{ scale: 1.1, rotate: 5 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => onClaimReward(habit.category, nextMilestone)}
-                            className="flex items-center gap-1 bg-gradient-to-r from-duolingo-yellow to-duolingo-orange text-white px-3 py-1 rounded-full font-bold shadow-lg"
+                            disabled={claimingCategory === habit.category}
+                            className={`flex items-center gap-1 px-3 py-1 rounded-full font-bold shadow-lg ${
+                              claimingCategory === habit.category 
+                                ? "bg-gray-400 text-white cursor-not-allowed"
+                                : "bg-gradient-to-r from-duolingo-yellow to-duolingo-orange text-white"
+                            }`}
                             animate={{ 
                               boxShadow: [
                                 "0 0 0px rgba(255, 198, 0, 0.5)",
@@ -237,7 +243,7 @@ export function HabitTracker({ habits, onClaimReward }: HabitTrackerProps) {
                             transition={{ duration: 2, repeat: Infinity }}
                           >
                             <Award className="w-4 h-4" />
-                            +{milestoneReward}
+                            {claimingCategory === habit.category ? '领取中...' : `+${milestoneReward}`}
                           </motion.button>
                         )}
                       </div>

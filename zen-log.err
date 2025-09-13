@@ -1,0 +1,51 @@
+2025-09-09 07:51:18,556 - root - INFO - Logging to: D:\points\zen-mcp-server\logs\mcp_server.log
+2025-09-09 07:51:18,557 - root - INFO - Process PID: 23632
+2025-09-09 07:51:18,557 - mcp.server.lowlevel.server - DEBUG - Initializing server 'zen-server'
+2025-09-09 07:51:18,558 - __main__ - DEBUG - Tool 'secaudit' disabled via DISABLED_TOOLS
+2025-09-09 07:51:18,558 - __main__ - DEBUG - Tool 'docgen' disabled via DISABLED_TOOLS
+2025-09-09 07:51:18,558 - __main__ - DEBUG - Tool 'analyze' disabled via DISABLED_TOOLS
+2025-09-09 07:51:18,558 - __main__ - DEBUG - Tool 'refactor' disabled via DISABLED_TOOLS
+2025-09-09 07:51:18,558 - __main__ - DEBUG - Tool 'tracer' disabled via DISABLED_TOOLS
+2025-09-09 07:51:18,558 - __main__ - DEBUG - Tool 'testgen' disabled via DISABLED_TOOLS
+2025-09-09 07:51:18,558 - __main__ - DEBUG - Disabled tools: ['analyze', 'docgen', 'refactor', 'secaudit', 'testgen', 'tracer']
+2025-09-09 07:51:18,558 - __main__ - INFO - Active tools: ['challenge', 'chat', 'codereview', 'consensus', 'debug', 'listmodels', 'planner', 'precommit', 'thinkdeep', 'version']
+2025-09-09 07:51:18,558 - mcp.server.lowlevel.server - DEBUG - Registering handler for ListToolsRequest
+2025-09-09 07:51:18,558 - mcp.server.lowlevel.server - DEBUG - Registering handler for CallToolRequest
+2025-09-09 07:51:18,558 - mcp.server.lowlevel.server - DEBUG - Registering handler for PromptListRequest
+2025-09-09 07:51:18,558 - mcp.server.lowlevel.server - DEBUG - Registering handler for GetPromptRequest
+2025-09-09 07:51:18,558 - asyncio - DEBUG - Using proactor: IocpProactor
+2025-09-09 07:51:18,565 - __main__ - DEBUG - Checking environment variables for API keys...
+2025-09-09 07:51:18,565 - __main__ - DEBUG -   OPENAI_API_KEY: [PRESENT]
+2025-09-09 07:51:18,565 - __main__ - DEBUG -   OPENROUTER_API_KEY: [PRESENT]
+2025-09-09 07:51:18,565 - __main__ - DEBUG -   GEMINI_API_KEY: [PRESENT]
+2025-09-09 07:51:18,565 - __main__ - DEBUG -   XAI_API_KEY: [PRESENT]
+2025-09-09 07:51:18,566 - __main__ - DEBUG -   CUSTOM_API_URL: [MISSING]
+2025-09-09 07:51:18,571 - __main__ - INFO - Gemini API key found - Gemini models available
+2025-09-09 07:51:18,571 - __main__ - DEBUG - OpenAI key check: key=[PRESENT]
+2025-09-09 07:51:18,571 - __main__ - INFO - OpenAI API key found
+2025-09-09 07:51:18,571 - __main__ - DEBUG - OpenRouter key check: key=[PRESENT]
+2025-09-09 07:51:18,571 - __main__ - INFO - OpenRouter API key found - Multiple models available via OpenRouter
+2025-09-09 07:51:18,571 - root - DEBUG - REGISTRY: Creating new registry instance
+2025-09-09 07:51:18,571 - root - DEBUG - REGISTRY: Created instance <providers.registry.ModelProviderRegistry object at 0x000001F23992B320>
+2025-09-09 07:51:18,571 - __main__ - INFO - Available providers: Gemini, OpenAI, OpenRouter
+2025-09-09 07:51:18,571 - __main__ - INFO - Provider priority: Native APIs (Gemini, OpenAI) ¡ú OpenRouter (catch-all)
+2025-09-09 07:51:18,572 - utils.model_restrictions - DEBUG - OPENAI_ALLOWED_MODELS not set or empty - all openai models allowed
+2025-09-09 07:51:18,572 - utils.model_restrictions - DEBUG - GOOGLE_ALLOWED_MODELS not set or empty - all google models allowed
+2025-09-09 07:51:18,572 - utils.model_restrictions - DEBUG - XAI_ALLOWED_MODELS not set or empty - all xai models allowed
+2025-09-09 07:51:18,572 - utils.model_restrictions - DEBUG - OPENROUTER_ALLOWED_MODELS not set or empty - all openrouter models allowed
+2025-09-09 07:51:18,572 - utils.model_restrictions - DEBUG - DIAL_ALLOWED_MODELS not set or empty - all dial models allowed
+2025-09-09 07:51:18,572 - __main__ - INFO - No model restrictions configured - all models allowed
+2025-09-09 07:51:18,572 - root - INFO - Using extended timeouts for custom endpoint: https://api.openai.com/v1
+2025-09-09 07:51:18,573 - root - DEBUG - Configured timeouts - Connect: 45.0s, Read: 900.0s, Write: 900.0s, Pool: 900.0s
+2025-09-09 07:51:18,573 - root - INFO - Model allow-list not configured for OpenRouter - all models permitted. To restrict access, set OPENROUTER_ALLOWED_MODELS with comma-separated model names.
+2025-09-09 07:51:18,573 - root - INFO - Using extended timeouts for custom endpoint: https://openrouter.ai/api/v1
+2025-09-09 07:51:18,573 - root - DEBUG - Configured timeouts - Connect: 45.0s, Read: 900.0s, Write: 900.0s, Pool: 900.0s
+2025-09-09 07:51:18,575 - root - DEBUG - Loaded OpenRouter config from package resources
+2025-09-09 07:51:18,575 - root - DEBUG - Loaded 15 OpenRouter models with 62 aliases (called from __init__ in D:\points\zen-mcp-server\providers\openrouter_registry.py)
+2025-09-09 07:51:18,575 - root - INFO - OpenRouter loaded 15 models with 62 aliases
+2025-09-09 07:51:18,575 - __main__ - INFO - Zen MCP Server starting up...
+2025-09-09 07:51:18,576 - __main__ - INFO - Log level: DEBUG
+2025-09-09 07:51:18,576 - __main__ - INFO - Model mode: AUTO (Claude will select the best model for each task)
+2025-09-09 07:51:18,576 - __main__ - INFO - Default thinking mode (ThinkDeep): high
+2025-09-09 07:51:18,576 - __main__ - INFO - Available tools: ['chat', 'thinkdeep', 'planner', 'consensus', 'codereview', 'precommit', 'debug', 'challenge', 'listmodels', 'version']
+2025-09-09 07:51:18,576 - __main__ - INFO - Server ready - waiting for tool requests...

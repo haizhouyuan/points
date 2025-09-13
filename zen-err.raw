@@ -1,0 +1,59 @@
+2025-09-09 07:52:14,499 - root - INFO - Logging to: D:\points\zen-mcp-server\logs\mcp_server.log
+2025-09-09 07:52:14,499 - root - INFO - Process PID: 27716
+2025-09-09 07:52:14,499 - mcp.server.lowlevel.server - DEBUG - Initializing server 'zen-server'
+2025-09-09 07:52:14,500 - __main__ - DEBUG - Tool 'secaudit' disabled via DISABLED_TOOLS
+2025-09-09 07:52:14,501 - __main__ - DEBUG - Tool 'docgen' disabled via DISABLED_TOOLS
+2025-09-09 07:52:14,501 - __main__ - DEBUG - Tool 'analyze' disabled via DISABLED_TOOLS
+2025-09-09 07:52:14,502 - __main__ - DEBUG - Tool 'refactor' disabled via DISABLED_TOOLS
+2025-09-09 07:52:14,502 - __main__ - DEBUG - Tool 'tracer' disabled via DISABLED_TOOLS
+2025-09-09 07:52:14,502 - __main__ - DEBUG - Tool 'testgen' disabled via DISABLED_TOOLS
+2025-09-09 07:52:14,502 - __main__ - DEBUG - Disabled tools: ['analyze', 'docgen', 'refactor', 'secaudit', 'testgen', 'tracer']
+2025-09-09 07:52:14,502 - __main__ - INFO - Active tools: ['challenge', 'chat', 'codereview', 'consensus', 'debug', 'listmodels', 'planner', 'precommit', 'thinkdeep', 'version']
+2025-09-09 07:52:14,502 - mcp.server.lowlevel.server - DEBUG - Registering handler for ListToolsRequest
+2025-09-09 07:52:14,502 - mcp.server.lowlevel.server - DEBUG - Registering handler for CallToolRequest
+2025-09-09 07:52:14,502 - mcp.server.lowlevel.server - DEBUG - Registering handler for PromptListRequest
+2025-09-09 07:52:14,502 - mcp.server.lowlevel.server - DEBUG - Registering handler for GetPromptRequest
+2025-09-09 07:52:14,503 - asyncio - DEBUG - Using proactor: IocpProactor
+2025-09-09 07:52:14,509 - __main__ - DEBUG - Checking environment variables for API keys...
+2025-09-09 07:52:14,509 - __main__ - DEBUG -   OPENAI_API_KEY: [PRESENT]
+2025-09-09 07:52:14,509 - __main__ - DEBUG -   OPENROUTER_API_KEY: [PRESENT]
+2025-09-09 07:52:14,509 - __main__ - DEBUG -   GEMINI_API_KEY: [PRESENT]
+2025-09-09 07:52:14,509 - __main__ - DEBUG -   XAI_API_KEY: [PRESENT]
+2025-09-09 07:52:14,509 - __main__ - DEBUG -   CUSTOM_API_URL: [MISSING]
+2025-09-09 07:52:14,512 - __main__ - INFO - Gemini API key found - Gemini models available
+2025-09-09 07:52:14,512 - __main__ - DEBUG - OpenAI key check: key=[PRESENT]
+2025-09-09 07:52:14,512 - __main__ - INFO - OpenAI API key found
+2025-09-09 07:52:14,512 - __main__ - DEBUG - OpenRouter key check: key=[PRESENT]
+2025-09-09 07:52:14,512 - __main__ - INFO - OpenRouter API key found - Multiple models available via OpenRouter
+2025-09-09 07:52:14,512 - root - DEBUG - REGISTRY: Creating new registry instance
+2025-09-09 07:52:14,512 - root - DEBUG - REGISTRY: Created instance <providers.registry.ModelProviderRegistry object at 0x000002153B189D30>
+2025-09-09 07:52:14,512 - __main__ - INFO - Available providers: Gemini, OpenAI, OpenRouter
+2025-09-09 07:52:14,512 - __main__ - INFO - Provider priority: Native APIs (Gemini, OpenAI) ¡ú OpenRouter (catch-all)
+2025-09-09 07:52:14,512 - utils.model_restrictions - DEBUG - OPENAI_ALLOWED_MODELS not set or empty - all openai models allowed
+2025-09-09 07:52:14,512 - utils.model_restrictions - DEBUG - GOOGLE_ALLOWED_MODELS not set or empty - all google models allowed
+2025-09-09 07:52:14,512 - utils.model_restrictions - DEBUG - XAI_ALLOWED_MODELS not set or empty - all xai models allowed
+2025-09-09 07:52:14,512 - utils.model_restrictions - DEBUG - OPENROUTER_ALLOWED_MODELS not set or empty - all openrouter models allowed
+2025-09-09 07:52:14,512 - utils.model_restrictions - DEBUG - DIAL_ALLOWED_MODELS not set or empty - all dial models allowed
+2025-09-09 07:52:14,512 - __main__ - INFO - No model restrictions configured - all models allowed
+2025-09-09 07:52:14,513 - root - INFO - Using extended timeouts for custom endpoint: https://api.openai.com/v1
+2025-09-09 07:52:14,513 - root - DEBUG - Configured timeouts - Connect: 45.0s, Read: 900.0s, Write: 900.0s, Pool: 900.0s
+2025-09-09 07:52:14,513 - root - INFO - Model allow-list not configured for OpenRouter - all models permitted. To restrict access, set OPENROUTER_ALLOWED_MODELS with comma-separated model names.
+2025-09-09 07:52:14,513 - root - INFO - Using extended timeouts for custom endpoint: https://openrouter.ai/api/v1
+2025-09-09 07:52:14,513 - root - DEBUG - Configured timeouts - Connect: 45.0s, Read: 900.0s, Write: 900.0s, Pool: 900.0s
+2025-09-09 07:52:14,514 - root - DEBUG - Loaded OpenRouter config from package resources
+2025-09-09 07:52:14,514 - root - DEBUG - Loaded 15 OpenRouter models with 62 aliases (called from __init__ in D:\points\zen-mcp-server\providers\openrouter_registry.py)
+2025-09-09 07:52:14,514 - root - INFO - OpenRouter loaded 15 models with 62 aliases
+2025-09-09 07:52:14,514 - __main__ - INFO - Zen MCP Server starting up...
+2025-09-09 07:52:14,514 - __main__ - INFO - Log level: DEBUG
+2025-09-09 07:52:14,515 - __main__ - INFO - Model mode: AUTO (Claude will select the best model for each task)
+2025-09-09 07:52:14,515 - __main__ - INFO - Default thinking mode (ThinkDeep): high
+2025-09-09 07:52:14,515 - __main__ - INFO - Available tools: ['chat', 'thinkdeep', 'planner', 'consensus', 'codereview', 'precommit', 'debug', 'challenge', 'listmodels', 'version']
+2025-09-09 07:52:14,515 - __main__ - INFO - Server ready - waiting for tool requests...
+2025-09-09 07:52:14,522 - mcp.server.lowlevel.server - DEBUG - Received message: 1 validation error for JSONRPCMessage
+  Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='Content-Length: 60\n', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/json_invalid
+2025-09-09 07:52:14,523 - mcp.server.lowlevel.server - DEBUG - Received message: 1 validation error for JSONRPCMessage
+  Invalid JSON: EOF while parsing a value at line 2 column 0 [type=json_invalid, input_value='\n', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/json_invalid
+2025-09-09 07:52:14,524 - root - WARNING - Failed to validate request: Received request before initialization was complete
+2025-09-09 07:52:14,524 - root - DEBUG - Message that failed validation: method='tools/list' params={} jsonrpc='2.0' id='1'

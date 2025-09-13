@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { Palette, Crown, Shirt, Eye, Smile, Star, Zap, Gift, Save, RotateCcw, Sparkles } from 'lucide-react';
 
 interface AvatarConfig {

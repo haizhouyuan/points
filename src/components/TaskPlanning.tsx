@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { toast } from "sonner@2.0.3";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { motion } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
@@ -9,27 +9,47 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Calendar, ChevronLeft, ChevronRight, Clock, Star, Trash2, Plus, GripVertical } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Clock, Star, Trash2, Plus, GripVertical, Loader2, BookOpen } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { TaskLibrary } from "./TaskLibrary";
+import { taskService } from '../services';
+import type { ScheduledTask as ApiScheduledTask, TaskCategory, TaskDifficulty, TaskTemplate } from '../services/types';
 
-interface ScheduledTask {
-  id: string;
-  taskId: string;
-  title: string;
-  description: string;
-  category: string;
-  estimatedTime: number;
-  points: number;
-  difficulty: "easy" | "medium" | "hard";
+// Use API types but extend for local UI needs
+interface ScheduledTaskUI extends Omit<ApiScheduledTask, 'scheduledDate' | 'status' | 'estimatedMinutes'> {
   date: string;
   startTime: string;
   endTime: string;
-  completed?: boolean;
+  estimatedTime: number;
+  completed: boolean;
+  category: TaskCategory;
+  difficulty: TaskDifficulty;
 }
+
+const mapApiTaskToUI = (apiTask: ApiScheduledTask): ScheduledTaskUI => {
+  const scheduledDate = new Date(apiTask.scheduledDate);
+  return {
+    ...apiTask,
+    _id: apiTask._id,
+    id: apiTask._id,
+    taskId: apiTask.templateId,
+    date: apiTask.scheduledDate.split('T')[0],
+    startTime: apiTask.startTime || '09:00',
+    endTime: apiTask.endTime || '10:00',
+    estimatedTime: (apiTask as any).template?.estimatedMinutes || 30,
+    completed: apiTask.status === 'completed',
+    category: ((apiTask as any).template?.category || 'other') as TaskCategory,
+    difficulty: ((apiTask as any).template?.difficulty || 'medium') as TaskDifficulty,
+    title: (apiTask as any).template?.title || apiTask.title || 'Untitled Task',
+    description: (apiTask as any).template?.description || apiTask.description || '',
+    points: apiTask.pointsAwarded || (apiTask as any).template?.basePoints || 0
+  };
+};
 
 type ViewMode = 'day' | 'week' | 'month';
 
 interface TaskPlanningProps {
-  onTaskCompleted: (task: ScheduledTask) => void;
+  onTaskCompleted: (task: ScheduledTaskUI) => void;
 }
 
 export function TaskPlanning({ onTaskCompleted }: TaskPlanningProps) {
@@ -39,14 +59,19 @@ export function TaskPlanning({ onTaskCompleted }: TaskPlanningProps) {
     new Date().toISOString().split('T')[0]
   );
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null);
+  const [editingTask, setEditingTask] = useState<ScheduledTaskUI | null>(null);
+  const [scheduledTasks, setScheduledTasks] = useState<ScheduledTaskUI[]>([]);
+  const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [taskFormData, setTaskFormData] = useState({
     title: '',
     description: '',
-    category: '学习',
+    category: 'learning' as TaskCategory,
     estimatedTime: 30,
     points: 50,
-    difficulty: 'medium' as const,
+    difficulty: 'medium' as TaskDifficulty,
     date: '',
     startTime: '',
     endTime: ''
@@ -60,51 +85,112 @@ export function TaskPlanning({ onTaskCompleted }: TaskPlanningProps) {
     return `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  // 已安排的任务
-  const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>([
-    {
-      id: "scheduled_1",
-      taskId: "1",
-      title: "完成数学作业",
-      description: "完成今天布置的数学习题和练习",
-      category: "学习",
-      estimatedTime: 60,
-      points: 100,
-      difficulty: "medium",
-      date: "2025-01-06",
-      startTime: "19:00",
-      endTime: "20:00",
-      completed: false
-    },
-    {
-      id: "scheduled_2",
-      taskId: "2",
-      title: "阅读30分钟",
-      description: "阅读课外书籍或文章",
-      category: "学习",
-      estimatedTime: 30,
-      points: 60,
-      difficulty: "easy",
-      date: "2025-01-06",
-      startTime: "20:30",
-      endTime: "21:00",
-      completed: true
-    },
-    {
-      id: "scheduled_3",
-      taskId: "4",
-      title: "户外运动",
-      description: "进行跑步、骑车或其他户外运动",
-      category: "运动",
-      estimatedTime: 60,
-      points: 120,
-      difficulty: "medium",
-      date: "2025-01-07",
-      startTime: "16:00",
-      endTime: "17:00",
-      completed: false
+  // Fetch tasks from API
+  const fetchTasks = useCallback(async (startDate: string, endDate: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const tasks = await taskService.getTasksByDateRange(startDate, endDate);
+      const uiTasks = tasks.map(mapApiTaskToUI);
+      setScheduledTasks(uiTasks);
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message || 'Failed to fetch tasks');
+      console.error('Failed to fetch tasks:', err);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  }, []);
+
+  // Fetch task templates from API
+  const fetchTemplates = useCallback(async () => {
+    try {
+      setTemplatesLoading(true);
+      const response = await taskService.getTaskTemplates({ limit: 50 });
+      setTaskTemplates(response.data);
+    } catch (err) {
+      console.error('Failed to fetch task templates:', err);
+      // Provide fallback templates if API fails
+      setTaskTemplates([
+        {
+          _id: "fallback-1",
+          title: "阅读30分钟",
+          description: "阅读课外书籍或学习材料30分钟",
+          category: "reading",
+          estimatedMinutes: 30,
+          basePoints: 60,
+          difficulty: "easy",
+          isActive: true,
+          tags: ["阅读", "学习"],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          _id: "fallback-2", 
+          title: "整理房间",
+          description: "清理并整理个人房间",
+          category: "chores",
+          estimatedMinutes: 45,
+          basePoints: 100,
+          difficulty: "medium",
+          isActive: true,
+          tags: ["家务", "整理"],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          _id: "fallback-3",
+          title: "户外运动",
+          description: "进行30分钟户外体育活动",
+          category: "exercise", 
+          estimatedMinutes: 30,
+          basePoints: 120,
+          difficulty: "medium",
+          isActive: true,
+          tags: ["运动", "健康"],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ]);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  }, []);
+
+  // Load templates when component mounts
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  // Load tasks when component mounts or date changes
+  useEffect(() => {
+    const getDateRange = () => {
+      if (viewMode === 'month') {
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        return {
+          startDate: formatDate(startOfMonth),
+          endDate: formatDate(endOfMonth)
+        };
+      } else if (viewMode === 'week') {
+        const weekDays = getWeekDays(currentDate);
+        return {
+          startDate: formatDate(weekDays[0]),
+          endDate: formatDate(weekDays[6])
+        };
+      } else {
+        // Day view
+        const dayStr = viewMode === 'day' ? selectedDate : formatDate(currentDate);
+        return {
+          startDate: dayStr,
+          endDate: dayStr
+        };
+      }
+    };
+
+    const { startDate, endDate } = getDateRange();
+    fetchTasks(startDate, endDate);
+  }, [currentDate, viewMode, selectedDate, fetchTasks]);
 
   // 生成时间段 (6:00-22:00，每30分钟一段)
   const getTimeSlots = () => {
@@ -195,7 +281,7 @@ export function TaskPlanning({ onTaskCompleted }: TaskPlanningProps) {
     setTaskFormData({
       title: '',
       description: '',
-      category: '学习',
+      category: 'learning',
       estimatedTime: 30,
       points: 50,
       difficulty: 'medium',
@@ -207,7 +293,59 @@ export function TaskPlanning({ onTaskCompleted }: TaskPlanningProps) {
     setIsTaskDialogOpen(true);
   };
 
-  const openEditDialog = (task: ScheduledTask) => {
+  // Handle template selection from TaskLibrary
+  const handleTemplateSelect = (template: TaskTemplate) => {
+    const categoryMapping: { [key: string]: TaskCategory } = {
+      'reading': 'reading',
+      'exercise': 'exercise', 
+      'chores': 'chores',
+      'learning': 'learning',
+      'creativity': 'creativity',
+      'other': 'other'
+    };
+
+    // Fill form with template data
+    setTaskFormData(prev => ({
+      ...prev,
+      title: template.title,
+      description: template.description,
+      category: categoryMapping[template.category] || 'other',
+      estimatedTime: template.estimatedMinutes,
+      points: template.basePoints,
+      difficulty: template.difficulty,
+      endTime: calculateEndTime(prev.startTime, template.estimatedMinutes)
+    }));
+  };
+
+  // Handle custom task creation from TaskLibrary
+  const handleAddTask = async (taskData: Omit<TaskTemplate, '_id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      // Create template first
+      const newTemplate = await taskService.createTaskTemplate({
+        title: taskData.title,
+        description: taskData.description,
+        category: taskData.category as TaskCategory,
+        estimatedMinutes: taskData.estimatedMinutes,
+        basePoints: taskData.basePoints,
+        difficulty: taskData.difficulty,
+        isActive: true,
+        tags: taskData.tags || []
+      });
+      
+      // Add to templates list
+      setTaskTemplates(prev => [newTemplate, ...prev]);
+      
+      // Select the new template
+      handleTemplateSelect(newTemplate);
+      
+      toast.success('新任务模板已创建并选中！');
+    } catch (error) {
+      console.error('Failed to create task template:', error);
+      toast.error('创建任务模板失败');
+    }
+  };
+
+  const openEditDialog = (task: ScheduledTaskUI) => {
     setTaskFormData({
       title: task.title,
       description: task.description,
@@ -223,75 +361,124 @@ export function TaskPlanning({ onTaskCompleted }: TaskPlanningProps) {
     setIsTaskDialogOpen(true);
   };
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = async () => {
     if (!taskFormData.title.trim()) return;
 
-    const taskData = {
-      ...taskFormData,
-      endTime: calculateEndTime(taskFormData.startTime, taskFormData.estimatedTime)
-    };
-
-    if (editingTask) {
-      // 编辑现有任务
-      setScheduledTasks(prev =>
-        prev.map(task =>
-          task.id === editingTask.id
-            ? { ...task, ...taskData }
-            : task
-        )
-      );
-      toast.success(`任务"${taskData.title}"已更新！`);
-    } else {
-      // 创建新任务
-      const newTask: ScheduledTask = {
-        id: `task_${Date.now()}`,
-        taskId: `template_${Date.now()}`,
-        ...taskData,
-        completed: false
+    try {
+      setLoading(true);
+      const taskData = {
+        ...taskFormData,
+        endTime: calculateEndTime(taskFormData.startTime, taskFormData.estimatedTime)
       };
-      setScheduledTasks(prev => [...prev, newTask]);
-      toast.success(`任务"${taskData.title}"已创建！`);
+
+      if (editingTask) {
+        // Update existing task
+        const updated = await taskService.updateScheduledTask(editingTask.id, {
+          startTime: taskData.startTime,
+          endTime: taskData.endTime,
+          notes: taskData.description
+        });
+        
+        const updatedUITask = mapApiTaskToUI(updated);
+        setScheduledTasks(prev =>
+          prev.map(task =>
+            task.id === editingTask.id ? updatedUITask : task
+          )
+        );
+        toast.success(`任务"${taskData.title}"已更新！`);
+      } else {
+        // Create new task using quick create
+        const { scheduledTask } = await taskService.quickCreateAndSchedule({
+          title: taskData.title,
+          description: taskData.description,
+          category: taskData.category,
+          difficulty: taskData.difficulty,
+          estimatedMinutes: taskData.estimatedTime,
+          scheduledDate: `${taskData.date}T${taskData.startTime}:00.000Z`,
+          startTime: taskData.startTime
+        });
+        
+        const newUITask = mapApiTaskToUI(scheduledTask);
+        setScheduledTasks(prev => [...prev, newUITask]);
+        toast.success(`任务"${taskData.title}"已创建！`);
+      }
+
+      setIsTaskDialogOpen(false);
+      setEditingTask(null);
+    } catch (error) {
+      console.error('Failed to save task:', error);
+      toast.error(editingTask ? '更新任务失败' : '创建任务失败');
+    } finally {
+      setLoading(false);
     }
-
-    setIsTaskDialogOpen(false);
-    setEditingTask(null);
   };
 
-  const handleTaskCompleted = (taskId: string) => {
-    setScheduledTasks(prev =>
-      prev.map(task => {
-        if (task.id === taskId) {
-          const updatedTask = { ...task, completed: !task.completed };
-          
-          if (updatedTask.completed && !task.completed) {
-            onTaskCompleted(updatedTask);
-            toast.success(`任务完成！🎉`, {
-              description: `"${task.title}"已完成，获得${task.points}积分奖励！`,
-            });
-          } else if (!updatedTask.completed && task.completed) {
-            toast.info(`任务"${task.title}"已取消完成状态`);
-          }
-          
-          return updatedTask;
-        }
-        return task;
-      })
-    );
-  };
-
-  const handleTaskRemoved = (taskId: string) => {
+  const handleTaskCompleted = async (taskId: string) => {
     const task = scheduledTasks.find(t => t.id === taskId);
-    setScheduledTasks(prev => prev.filter(t => t.id !== taskId));
-    toast.info(`任务"${task?.title}"已从日历中移除`);
+    if (!task) return;
+
+    try {
+      if (!task.completed) {
+        // Complete the task
+        const result = await taskService.completeTask(taskId, {
+          notes: 'Completed via task planning interface'
+        });
+        
+        const updatedTask = mapApiTaskToUI(result.task);
+        setScheduledTasks(prev =>
+          prev.map(t => t.id === taskId ? updatedTask : t)
+        );
+        
+        onTaskCompleted(updatedTask);
+        toast.success(`任务完成！🎉`, {
+          description: `"${task.title}"已完成，获得${result.pointsAwarded}积分奖励！`,
+        });
+      } else {
+        // Uncomplete the task
+        const updated = await taskService.uncompleteTask(taskId, 'Uncompleted via task planning interface');
+        const updatedTask = mapApiTaskToUI(updated);
+        
+        setScheduledTasks(prev =>
+          prev.map(t => t.id === taskId ? updatedTask : t)
+        );
+        
+        toast.info(`任务"${task.title}"已取消完成状态`);
+      }
+    } catch (error) {
+      console.error('Failed to update task completion:', error);
+      toast.error('更新任务状态失败');
+    }
+  };
+
+  const handleTaskRemoved = async (taskId: string) => {
+    const task = scheduledTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    try {
+      await taskService.deleteScheduledTask(taskId);
+      setScheduledTasks(prev => prev.filter(t => t.id !== taskId));
+      toast.info(`任务"${task.title}"已从日历中移除`);
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      toast.error('删除任务失败');
+    }
   };
 
   const getCategoryColor = (category: string) => {
     const colors = {
+      // Chinese categories (legacy support)
       "学习": "bg-blue-100 text-blue-800 border-blue-200",
-      "运动": "bg-green-100 text-green-800 border-green-200",
+      "运动": "bg-green-100 text-green-800 border-green-200", 
       "家务": "bg-yellow-100 text-yellow-800 border-yellow-200",
       "社交": "bg-purple-100 text-purple-800 border-purple-200",
       "娱乐": "bg-pink-100 text-pink-800 border-pink-200",
+      // English categories (API standard)
+      "learning": "bg-blue-100 text-blue-800 border-blue-200",
+      "exercise": "bg-green-100 text-green-800 border-green-200",
+      "chores": "bg-yellow-100 text-yellow-800 border-yellow-200", 
+      "reading": "bg-indigo-100 text-indigo-800 border-indigo-200",
+      "creativity": "bg-purple-100 text-purple-800 border-purple-200",
+      "other": "bg-gray-100 text-gray-800 border-gray-200"
     };
     return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200";
   };
@@ -599,22 +786,52 @@ export function TaskPlanning({ onTaskCompleted }: TaskPlanningProps) {
         </CardHeader>
         
         <CardContent>
-          {viewMode === 'day' && renderDayView()}
-          {viewMode === 'week' && renderWeekView()}
-          {viewMode === 'month' && renderMonthView()}
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+              <span className="ml-2 text-gray-600">加载任务中...</span>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-8 text-red-600">
+              <span>加载任务失败: {error}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  const currentDateStr = formatDate(currentDate);
+                  fetchTasks(currentDateStr, currentDateStr);
+                }}
+                className="ml-2"
+              >
+                重试
+              </Button>
+            </div>
+          ) : (
+            <>
+              {viewMode === 'day' && renderDayView()}
+              {viewMode === 'week' && renderWeekView()}
+              {viewMode === 'month' && renderMonthView()}
+            </>
+          )}
         </CardContent>
       </Card>
 
       {/* 任务创建/编辑对话框 */}
       <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingTask ? '编辑任务' : '创建新任务'}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {editingTask ? '编辑任务' : '创建新任务'}
+              {!editingTask && <BookOpen className="w-5 h-5" />}
+            </DialogTitle>
             <DialogDescription>
               为 {taskFormData.date} {taskFormData.startTime} 
-              {editingTask ? '编辑任务信息' : '创建一个新的任务'}
+              {editingTask ? '编辑任务信息' : '选择模板或创建新任务'}
             </DialogDescription>
           </DialogHeader>
+
+          {editingTask ? (
+            // Edit mode - show form directly
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -732,6 +949,169 @@ export function TaskPlanning({ onTaskCompleted }: TaskPlanningProps) {
                 {editingTask ? '更新任务' : '创建任务'}
               </Button>
             </div>
+          </div>
+          ) : (
+            // Create mode - show tabs with TaskLibrary
+            <Tabs defaultValue="templates" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="templates" className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  任务模板
+                </TabsTrigger>
+                <TabsTrigger value="custom" className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  自定义任务
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="templates" className="mt-4">
+                <div className="max-h-96 overflow-y-auto">
+                  {templatesLoading ? (
+                    <div className="flex justify-center items-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <span className="ml-2 text-gray-600">加载模板中...</span>
+                    </div>
+                  ) : (
+                    <TaskLibrary 
+                      tasks={taskTemplates.map(template => ({
+                        id: template._id,
+                        title: template.title,
+                        description: template.description,
+                        category: template.category,
+                        estimatedTime: template.estimatedMinutes,
+                        points: template.basePoints,
+                        difficulty: template.difficulty,
+                        isCustom: false
+                      }))}
+                      onAddTask={handleAddTask}
+                      onDragStart={(task) => {
+                        const template = taskTemplates.find(t => t._id === task.id);
+                        if (template) {
+                          handleTemplateSelect(template);
+                        }
+                      }}
+                    />
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="custom" className="mt-4 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>日期</Label>
+                    <Input
+                      type="date"
+                      value={taskFormData.date}
+                      onChange={(e) => setTaskFormData({ ...taskFormData, date: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>开始时间</Label>
+                    <Input
+                      type="time"
+                      value={taskFormData.startTime}
+                      onChange={(e) => {
+                        const newStartTime = e.target.value;
+                        setTaskFormData({ 
+                          ...taskFormData, 
+                          startTime: newStartTime,
+                          endTime: calculateEndTime(newStartTime, taskFormData.estimatedTime)
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>任务标题</Label>
+                  <Input
+                    placeholder="输入任务名称"
+                    value={taskFormData.title}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, title: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <Label>任务描述</Label>
+                  <Textarea
+                    placeholder="详细描述任务内容"
+                    value={taskFormData.description}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, description: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>任务分类</Label>
+                    <Select value={taskFormData.category} onValueChange={(value: TaskCategory) => setTaskFormData({ ...taskFormData, category: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择分类" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="learning">学习</SelectItem>
+                        <SelectItem value="exercise">运动</SelectItem>
+                        <SelectItem value="chores">家务</SelectItem>
+                        <SelectItem value="reading">阅读</SelectItem>
+                        <SelectItem value="creativity">创意</SelectItem>
+                        <SelectItem value="other">其他</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>任务难度</Label>
+                    <Select value={taskFormData.difficulty} onValueChange={(value: TaskDifficulty) => setTaskFormData({ ...taskFormData, difficulty: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择难度" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="easy">简单</SelectItem>
+                        <SelectItem value="medium">中等</SelectItem>
+                        <SelectItem value="hard">困难</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>预计时长（分钟）</Label>
+                    <Input
+                      type="number"
+                      min="5"
+                      max="480"
+                      value={taskFormData.estimatedTime}
+                      onChange={(e) => {
+                        const estimatedTime = parseInt(e.target.value) || 30;
+                        setTaskFormData({ 
+                          ...taskFormData, 
+                          estimatedTime,
+                          endTime: calculateEndTime(taskFormData.startTime, estimatedTime)
+                        });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label>积分奖励</Label>
+                    <Input
+                      type="number"
+                      min="10"
+                      max="500"
+                      value={taskFormData.points}
+                      onChange={(e) => setTaskFormData({ ...taskFormData, points: parseInt(e.target.value) || 50 })}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+
+          <div className="flex gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)} className="flex-1">
+              取消
+            </Button>
+            <Button onClick={handleFormSubmit} className="flex-1 bg-emerald-500 hover:bg-emerald-600" disabled={!taskFormData.title.trim()}>
+              {editingTask ? '更新任务' : '创建任务'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

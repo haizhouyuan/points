@@ -284,3 +284,243 @@ Always use the test-runner sub-agent to run tests and analyze results. This ensu
 - NO OVER-ENGINEERING - avoid unnecessary abstractions when simple functions work
 - NO MIXED CONCERNS - proper separation of validation, API, database, UI logic
 - NO RESOURCE LEAKS - close connections, clear timeouts, remove listeners
+
+---
+
+# 🎯 业务逻辑设计框架
+
+> 家庭学习成长助手 - 核心业务逻辑与设计原则
+
+## 1. 积分与激励系统设计
+
+### 🎯 积分设置的心理学基础
+基于**自我决定理论**和**游戏化设计原理**：
+
+```javascript
+// 积分价值体系
+const pointSystem = {
+  basic: { range: "10-30分", purpose: "日常习惯，培养持续性" },
+  medium: { range: "50-100分", purpose: "学习挑战，主要激励" },
+  advanced: { range: "150-300分", purpose: "突破项目，成就感爆发" }
+};
+
+// 时间投入效率递减原理
+const timeEfficiency = {
+  "15min": "30分 (2.0分/分钟)",
+  "30min": "50分 (1.67分/分钟)", 
+  "60min": "80分 (1.33分/分钟)" // 激励长时间专注但效率递减
+};
+```
+
+### 🏆 成就与积分的层级关系
+
+```javascript
+const achievementSystem = {
+  frequency: "连续X天 → 解锁特殊技能",
+  accumulation: "总积分达到X → 解锁新分类",
+  quality: "高难度完成 → 获得稀有奖励", 
+  exploration: "尝试新领域 → 开启隐藏功能"
+};
+
+// 积分转换率设计
+const rewardConversion = {
+  daily: "100积分 = 小礼品",
+  weekly: "500积分 = 中等奖励",
+  monthly: "2000积分 = 大型奖励",
+  milestone: "5000积分 = 特殊体验"
+};
+```
+
+## 2. 技能分类的教育学框架
+
+### 📚 基于布鲁姆分类学的技能树
+
+```javascript
+const skillTree = {
+  L1_Foundation: {
+    color: "green",
+    level: "基础技能（记忆&理解）",
+    categories: [
+      "数学基础：四则运算、分数、几何基础",
+      "语言基础：拼音、识字、基础语法",
+      "英语入门：字母、音标、常用词汇", 
+      "科学启蒙：观察记录、基础实验"
+    ]
+  },
+  L2_Application: {
+    color: "blue", 
+    level: "应用技能（应用&分析）",
+    categories: [
+      "数学应用：应用题解决、数据分析",
+      "阅读理解：文章分析、逻辑推理",
+      "英语交流：对话练习、写作表达",
+      "科学探索：假设验证、现象解释"
+    ]
+  },
+  L3_Innovation: {
+    color: "purple",
+    level: "创新技能（评估&创造）", 
+    categories: [
+      "项目管理：计划制定、执行跟踪",
+      "创意表达：艺术创作、故事编写",
+      "批判思维：观点评估、论证分析",
+      "解决方案：问题设计、创新方案"
+    ]
+  }
+};
+```
+
+### 🎯 技能解锁的渐进式设计
+
+```javascript
+const unlockCriteria = {
+  prerequisite: "前置技能完成度 ≥ 80%",
+  points: "相关类别积分达标",
+  time: "学习时长要求",
+  project: "至少完成1个相关项目",
+  
+  example: {
+    skill: "进阶数学",
+    requirements: [
+      "数学基础达到80%完成度",
+      "累积数学类积分 ≥ 1000分",
+      "学习时长 ≥ 30天",
+      "完成至少1个数学项目"
+    ]
+  }
+};
+```
+
+## 3. UI设计方法论：HEART框架 + 用户旅程
+
+### 🧭 HEART指标体系
+
+```javascript
+const heartMetrics = {
+  H_Happiness: "成就解锁动画、积分获得反馈、进度可视化",
+  E_Engagement: "每日打卡率、平均会话时长、功能使用深度", 
+  A_Adoption: "新功能发现率、技能树探索率、奖励兑换率",
+  R_Retention: "7日留存、习惯养成率、长期目标完成率",
+  T_TaskSuccess: "任务完成率、学习目标达成率、技能提升速度"
+};
+```
+
+### 🗺️ 用户旅程映射
+
+```javascript
+const userJourney = {
+  coreFlow: "启动应用 → 查看今日状态 → 选择任务 → 执行学习 → 获得反馈 → 查看进展 → 设定明日目标",
+  
+  navigationLogic: {
+    "🏠 家庭主页": "Hub - 中心枢纽",
+    "📅 今日任务": "Action - 行动页面 → 🎯 任务执行页",
+    "🔥 习惯打卡": "Habit - 习惯页面 → 📊 习惯详情页", 
+    "🎁 奖励中心": "Reward - 奖励页面 → 🛒 兑换确认页",
+    "🏅 成就收集": "Achievement - 成就页面 → 🎊 成就详情页",
+    "🌟 技能成长": "Skill - 技能页面 → 📚 学习路径页"
+  }
+};
+```
+
+## 4. 关键业务规则设计
+
+### ⚡ 动机维持机制
+
+```javascript
+const motivationCurve = {
+  beginner: { 
+    level: "1-3", 
+    strategy: "高频小奖励",
+    rewardFreq: "high", 
+    difficulty: "low" 
+  },
+  growing: { 
+    level: "4-8", 
+    strategy: "中频中奖励",
+    rewardFreq: "medium", 
+    difficulty: "medium" 
+  },
+  expert: { 
+    level: "9+", 
+    strategy: "低频大奖励",
+    rewardFreq: "low", 
+    difficulty: "high" 
+  }
+};
+
+// 健康机制防止过度使用
+const healthyLimits = {
+  dailyMaxTasks: 8,           // 防止过度执行
+  mandatoryBreaks: true,      // 强制休息时间  
+  weeklyReflection: true,     // 每周反思总结
+  parentalControls: true      // 家长监护功能
+};
+```
+
+### 🎮 游戏化平衡原则
+
+```javascript
+const gamificationPrinciples = {
+  challengeBalance: "任务难度 = 当前技能水平 × (1.1-1.3)", // 略高于当前能力
+  rewardBalance: "70%即时奖励 + 30%延迟奖励", // 保持动机与培养耐心
+  motivationHierarchy: "技能提升感 > 积分获得感 > 物质奖励", // 逐步内化动机  
+  socialBalance: "个人成长 + 家庭分享 + 偶尔竞争" // 平衡个体与社交需求
+};
+```
+
+## 5. 开发实施策略
+
+### 🔄 三阶段迭代优化
+
+```javascript
+const developmentPhases = {
+  Phase1: {
+    duration: "2周",
+    focus: "核心循环验证",
+    deliverables: [
+      "基础积分-任务-奖励循环",
+      "核心页面跳转逻辑", 
+      "用户行为数据收集"
+    ]
+  },
+  Phase2: {
+    duration: "4周", 
+    focus: "深度功能完善",
+    deliverables: [
+      "技能树复杂交互",
+      "成就系统完整实现",
+      "个性化推荐算法"
+    ]
+  },
+  Phase3: {
+    duration: "2周",
+    focus: "体验优化打磨", 
+    deliverables: [
+      "动画细节完善",
+      "用户反馈整合",
+      "性能优化调整"
+    ]
+  }
+};
+```
+
+### 🎯 Phase 1 核心验证目标
+
+```javascript
+const phase1Goals = {
+  coreLoop: "验证 积分获取 → 任务完成 → 奖励兑换 基础循环",
+  navigation: "确保 6个核心页面 流畅跳转和状态管理",
+  dataCollection: "实现 用户行为埋点 和基础分析能力",
+  userFlow: "测试 完整用户旅程 的可用性和满意度"
+};
+```
+
+---
+
+## 🎯 当前开发重点
+
+**Phase 1 执行中** - 核心循环验证 (预计2周)
+- ✅ 界面简化和导航优化已完成
+- 🔄 正在验证积分-任务-奖励循环
+- ⏳ 待完善页面跳转逻辑
+- ⏳ 待实现用户行为数据收集

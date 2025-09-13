@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "zen": {
+      "command": "/mnt/d/points/zen-mcp-server/.zen_venv/Scripts/python.exe",
+      "args": ["/mnt/d/points/zen-mcp-server/server.py"]
+    }
+  }
+}

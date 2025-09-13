@@ -1,23 +1,72 @@
+import { useState, useEffect } from "react";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
-import { Star, Crown, Zap } from "lucide-react";
+import { Star, Crown, Zap, Loader2 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { authService, pointsService, gamificationService } from '../services';
+import type { User, PointsBalance, UserLevel } from '../services/types';
 
 interface PointsHeaderProps {
-  currentPoints: number;
-  level: number;
-  levelProgress: number;
-  nextLevelPoints: number;
-  userName: string;
+  // Optional props for override, otherwise will fetch from API
+  currentPoints?: number;
+  level?: number;
+  levelProgress?: number;
+  nextLevelPoints?: number;
+  userName?: string;
 }
 
 export function PointsHeader({ 
-  currentPoints, 
-  level, 
-  levelProgress, 
-  nextLevelPoints, 
-  userName 
+  currentPoints: propCurrentPoints, 
+  level: propLevel, 
+  levelProgress: propLevelProgress, 
+  nextLevelPoints: propNextLevelPoints, 
+  userName: propUserName 
 }: PointsHeaderProps) {
+  const [user, setUser] = useState<User | null>(null);
+  const [pointsBalance, setPointsBalance] = useState<PointsBalance | null>(null);
+  const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch user profile, points, and level data in parallel
+        const [userProfile, balance, levelData] = await Promise.all([
+          authService.getCurrentUser(),
+          pointsService.getBalance(),
+          gamificationService.getUserLevel()
+        ]);
+
+        setUser(userProfile);
+        setPointsBalance(balance);
+        setUserLevel(levelData);
+      } catch (err) {
+        const error = err as Error;
+        setError(error.message || 'Failed to fetch user data');
+        console.error('Failed to fetch user data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only fetch if not using prop overrides and user is authenticated
+    if (authService.isAuthenticated() && !propCurrentPoints) {
+      fetchUserData();
+    } else if (!authService.isAuthenticated()) {
+      setLoading(false);
+    }
+  }, [propCurrentPoints]);
+
+  // Use props if provided, otherwise use API data
+  const currentPoints = propCurrentPoints ?? pointsBalance?.current ?? 0;
+  const level = propLevel ?? userLevel?.overallLevel ?? 1;
+  const levelProgress = propLevelProgress ?? userLevel?.progressToNextLevel ?? 0;
+  const nextLevelPoints = propNextLevelPoints ?? userLevel?.nextLevelXp ?? 100;
+  const userName = propUserName ?? user?.profile?.displayName ?? user?.username ?? 'User';
   const getLevelIcon = (level: number) => {
     if (level >= 10) return <Crown className="w-7 h-7 text-yellow-300" />;
     if (level >= 5) return <Zap className="w-7 h-7 text-purple-300" />;
@@ -30,6 +79,29 @@ export function PointsHeader({
     if (level >= 3) return "积分能手";
     return "积分新手";
   };
+
+  // Show loading state
+  if (loading && !propCurrentPoints) {
+    return (
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600 rounded-3xl p-6 text-white shadow-2xl shadow-emerald-200">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-white" />
+          <span className="ml-2 text-white opacity-90">Loading profile...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error && !propCurrentPoints) {
+    return (
+      <div className="relative overflow-hidden bg-gradient-to-br from-red-400 via-red-500 to-red-600 rounded-3xl p-6 text-white shadow-2xl shadow-red-200">
+        <div className="flex items-center justify-center py-4">
+          <span className="text-white">Failed to load profile data</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600 rounded-3xl p-6 text-white shadow-2xl shadow-emerald-200">
@@ -55,7 +127,10 @@ export function PointsHeader({
           <div>
             <h1 className="text-2xl font-bold">你好，{userName}！</h1>
             <Badge variant="secondary" className="bg-gradient-to-r from-white/25 to-white/15 text-white border-0 font-semibold px-3 py-1">
-              {getLevelTitle(level)} · 等级 {level}
+              {userLevel?.currentTitle || getLevelTitle(level)} · 等级 {level}
+              {userLevel?.prestigeLevel && userLevel.prestigeLevel > 0 && (
+                <span className="ml-1">⭐{userLevel.prestigeLevel}</span>
+              )}
             </Badge>
           </div>
         </div>
@@ -65,7 +140,15 @@ export function PointsHeader({
           <span className="text-5xl font-black bg-gradient-to-r from-yellow-200 to-white bg-clip-text text-transparent drop-shadow-sm">
             {currentPoints.toLocaleString()}
           </span>
-          <span className="text-xl font-semibold opacity-90 mb-2">积分</span>
+          <div className="mb-2">
+            <span className="text-xl font-semibold opacity-90">积分</span>
+            {pointsBalance && (
+              <div className="text-xs opacity-75 mt-1">
+                总获得: {pointsBalance.totalEarned.toLocaleString()} | 
+                总消费: {pointsBalance.totalSpent.toLocaleString()}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 进度条 */}
@@ -73,7 +156,10 @@ export function PointsHeader({
           <div className="flex justify-between font-semibold opacity-95">
             <span>距离下一等级</span>
             <span className="bg-white/20 px-3 py-1 rounded-full">
-              {nextLevelPoints - currentPoints} 积分
+              {userLevel ? 
+                `${gamificationService.calculateXPToNextLevel(userLevel.overallXp, userLevel.overallLevel)} XP` :
+                `${nextLevelPoints - currentPoints} 积分`
+              }
             </span>
           </div>
           <Progress 
@@ -84,6 +170,11 @@ export function PointsHeader({
             <span>等级 {level}</span>
             <span>等级 {level + 1}</span>
           </div>
+          {userLevel && (
+            <div className="text-xs opacity-75 text-center">
+              当前经验值: {gamificationService.formatXP(userLevel.overallXp)}
+            </div>
+          )}
         </div>
       </div>
     </div>
