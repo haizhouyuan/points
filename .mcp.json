@@ -9,8 +9,8 @@
       "args": ["@upstash/context7-mcp"]
     },
     "zen": {
-      "command": "npx",
-      "args": ["@noodlea1/zen-mcp-server"]
+      "command": "D:\\points\\zen-mcp-server\\.zen_venv\\Scripts\\python.exe",
+      "args": ["D:\\points\\zen-mcp-server\\server.py"]
     }
   }
 }
