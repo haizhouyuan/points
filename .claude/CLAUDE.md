@@ -1,6 +1,100 @@
-# CLAUDE.md
+# Points Project - Claude Code Guide
 
 > Think carefully and implement the most concise solution that changes as little code as possible.
+
+## Project Overview
+
+Points (游戏化界面设计优化 2.0) is a modern gamified interface optimization project built with React 18 + Vite + TypeScript, featuring containerized deployment and complete CI/CD pipeline integration.
+
+**Tech Stack**: React 18 + Vite + TypeScript + Tailwind CSS + Docker + GitHub Actions
+
+## Server Infrastructure (47.120.74.212)
+
+### Port Allocation
+```
+服务器端口分配:
+├── 系统服务
+│   ├── Nginx: 80/443 (已占用)
+│   └── SSH: 22 (已占用)
+├── StoryApp 项目 (5001-5010)
+│   ├── Backend: 5001 (已占用)
+│   └── MongoDB: 27017 (已占用)
+├── Points 项目 (5002)
+│   └── Frontend: 5002 (已占用) ✅
+├── 项目2: 5011-5020 (可用)
+├── 项目3: 5021-5030 (可用)
+├── 项目4: 5031-5040 (可用)
+└── 项目5: 5041-5050 (可用)
+```
+
+### Resource Usage
+- **Points Container**: 2.1MB memory (0.11%), CPU 0.00%
+- **Docker Image**: 43.5MB (optimized multi-stage build)
+- **Status**: Stable production deployment ✅
+
+## Development Commands
+
+### Local Development
+```bash
+npm install                    # Install dependencies
+npm run dev                    # Development server (port 3000)
+npm run build                  # Production build
+npm run preview                # Preview production build
+```
+
+### Containerized Development
+```bash
+# Production mode
+docker compose up -d
+
+# Development mode (hot reload)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# Build and run locally
+docker build -t points:latest .
+docker run -d -p 5002:80 points:latest
+```
+
+## CI/CD Workflows
+
+### GitHub Actions Integration
+- **ci.yml**: PR质量检查和构建验证
+- **docker-build-push.yml**: Docker镜像构建和GHCR推送
+- **deploy-prod.yml**: 生产环境部署
+
+### Deployment Process
+1. **Code Push** → Main branch trigger
+2. **Docker Build** → Multi-stage build + security scan
+3. **GHCR Push** → Container registry publishing
+4. **Manual Deploy** → SSH-based production deployment
+5. **Health Check** → Container validation
+
+### Production Deployment
+```bash
+# Via GitHub Actions (Recommended)
+- Manual trigger: deploy-prod.yml workflow
+- Target: production environment
+- Port: 5002 (避免与StoryApp冲突)
+
+# Manual deployment
+docker pull ghcr.io/haizhouyuan/points:sha-latest
+docker run -d --name points-app -p 5002:80 ghcr.io/haizhouyuan/points:sha-latest
+```
+
+## Known Issues & Solutions
+
+### External Access (需要解决)
+**Problem**: 47.120.74.212:5002外网无法访问  
+**Cause**: 阿里云安全组未开放5002端口  
+**Solution**: 在阿里云控制台配置安全组规则
+
+### Port Conflicts (已解决)
+**Problem**: 端口5001被StoryApp占用  
+**Solution**: Points项目统一使用5002端口
+
+### Container Permissions (已解决)
+**Problem**: Nginx非root用户权限问题  
+**Solution**: 自定义nginx.conf配置可写目录
 
 ## USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
 
