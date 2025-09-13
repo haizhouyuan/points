@@ -28,10 +28,10 @@ npm run build
 docker build -t points:latest .
 
 # 运行容器
-docker run -d --name points-app -p 5001:80 points:latest
+docker run -d --name points-app -p 5002:80 points:latest
 
 # 访问应用
-open http://localhost:5001
+open http://localhost:5002
 ```
 
 #### 使用 Docker Compose
@@ -61,7 +61,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 docker pull ghcr.io/haizhouyuan/points:sha-latest
 
 # 运行镜像
-docker run -d -p 5001:80 ghcr.io/haizhouyuan/points:sha-latest
+docker run -d -p 5002:80 ghcr.io/haizhouyuan/points:sha-latest
 ```
 
 ### 镜像标签说明
@@ -79,7 +79,7 @@ cp .env.example .env
 ```
 
 主要配置项：
-- `APP_PORT`: 应用端口（默认：5001）
+- `APP_PORT`: 应用端口（默认：5002）
 - `NODE_ENV`: 运行环境
 - `APP_TAG`: Docker 镜像标签
 

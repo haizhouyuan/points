@@ -57,12 +57,12 @@ jobs:
             echo "🛑 停止旧容器..."
             docker rm -f points-app || true
             
-            # 以新镜像启动容器（映射到主机5001端口）
+            # 以新镜像启动容器（映射到主机5002端口）
             echo "🏃 启动新容器..."
             docker run -d \
               --name points-app \
               --restart unless-stopped \
-              -p 5001:80 \
+              -p 5002:80 \
               -e NODE_ENV=production \
               $IMAGE_URL
             
@@ -76,9 +76,9 @@ jobs:
               
               # 健康检查
               echo "🔍 执行健康检查..."
-              if curl -f http://localhost:5001 -o /dev/null -s; then
+              if curl -f http://localhost:5002 -o /dev/null -s; then
                 echo "✅ 健康检查通过 - Points 应用正常运行"
-                echo "🌐 应用访问地址: http://localhost:5001"
+                echo "🌐 应用访问地址: http://localhost:5002"
               else
                 echo "❌ 健康检查失败"
                 docker logs points-app
