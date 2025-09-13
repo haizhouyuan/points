@@ -57,10 +57,17 @@
       port: 3000,
       open: true,
     },
-    test: {
+  test: {
       globals: true,
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
       css: true,
+      include: [
+        'src/**/__tests__/**/*.{test,spec}.{ts,tsx}',
+        'src/**/*.{test,spec}.{ts,tsx}'
+      ],
+      exclude: [
+        'backend/**'
+      ]
     },
   });
