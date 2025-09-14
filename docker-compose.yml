@@ -16,7 +16,7 @@ services:
     environment:
       - NODE_ENV=production
     ports:
-      - "${APP_PORT:-5001}:80"   # 将容器80端口映射到主机端口（默认5001）
+      - "${APP_PORT:-5002}:80"   # 将容器80端口映射到主机端口（默认5002，避免与StoryApp冲突）
     networks:
       - points-net
     restart: unless-stopped
