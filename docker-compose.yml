@@ -16,13 +16,13 @@ services:
     environment:
       - NODE_ENV=production
     ports:
-      - "${APP_PORT:-5001}:80"   # 将容器80端口映射到主机端口（默认5001）
+      - "${APP_PORT:-5002}:80"   # 将容器80端口映射到主机端口（默认5002，避免与StoryApp冲突）
     networks:
       - points-net
     restart: unless-stopped
     # 前端应用无特殊健康检查端点，可选配简单的HTTP检查
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1 || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3

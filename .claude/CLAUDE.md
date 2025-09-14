@@ -55,6 +55,41 @@ docker build -t points:latest .
 docker run -d -p 5002:80 points:latest
 ```
 
+<<<<<<< HEAD
+## Enhanced CI/CD Workflows (2025 Upgrade)
+
+### Complete Pipeline Integration
+- **ci.yml**: 完整CI/CD流水线 (质量检查 + Docker构建 + 容器验证)
+- **pr-auto-review.yml**: Claude自动代码评审系统
+- **auto-fix.yml**: `/fix` 命令自动修复代码问题
+- **deploy-staging.yml**: PR成功后自动部署到测试环境
+- **deploy-prod.yml**: 手动触发生产环境部署
+
+### Multi-Stage CI Pipeline
+1. **Quality Check**: 构建验证 + 代码质量检查 + 类型检查
+2. **Docker Build**: 多平台镜像构建 + GHCR推送 (仅主分支)
+3. **Container Validation**: GHCR镜像验证 + 健康检查
+4. **Pipeline Summary**: 结果汇总和报告生成
+
+### Advanced Features
+- **Auto Review**: PR自动评审 (Claude Code powered)
+- **Auto Fix**: `/fix` 评论触发自动修复 (ESLint/Prettier/TypeScript)
+- **Staging Deploy**: CI成功后自动部署测试环境
+- **Container Registry**: GitHub Container Registry 集成
+- **Health Checks**: 完善的容器健康监控
+
+### Docker Configurations
+```bash
+# CI环境测试
+docker-compose.ci.yml          # CI流水线专用配置
+
+# GHCR镜像验证  
+docker-compose.ghcr.yml        # 生产镜像验证环境
+
+# 生产环境
+docker-compose.yml             # 标准生产配置
+```
+=======
 ## CI/CD Workflows
 
 ### GitHub Actions Integration
@@ -68,6 +103,7 @@ docker run -d -p 5002:80 points:latest
 3. **GHCR Push** → Container registry publishing
 4. **Manual Deploy** → SSH-based production deployment
 5. **Health Check** → Container validation
+>>>>>>> origin/main
 
 ### Production Deployment
 ```bash

@@ -1,0 +1,47 @@
+{
+  "workspaceRoot": "D:/points",
+  "customInstructions": [
+    "参考 d:/storyapp 这个代码库的 CI 流程，深度分析，移植到当前代码库",
+    "think harder 本地构建测试是关键一环，我是要实现本地测试提高后面 GitHub Actions 测试部署的成功率的。所以一定要跑通，深入调查问题，深度思考解决问题修复问题后继续往下跑"
+  ],
+  "rules": [
+    "ABSOLUTE RULES from CLAUDE.md",
+    "Always use sub-agents for context optimization",
+    "Run all tests with test-runner agent",
+    "Use file-analyzer for log analysis",
+    "Use code-analyzer for bug research"
+  ],
+  "mcpServers": {},
+  "commandPalette": {
+    "customCommands": []
+  },
+  "computer": {
+    "allowedCommands": [
+      "List(**)"
+    ]
+  },
+  "cline": {
+    "clineRules": [
+      "使用中文回复用户",
+      "严格遵循 CLAUDE.md 中的规则",
+      "使用 sub-agents 优化上下文"
+    ]
+  },
+  "apiConfiguration": {
+    "anthropicRequestOptions": {
+      "allowedHosts": [
+        "api.anthropic.com"
+      ]
+    }
+  },
+  "experimental": {
+    "allowedCommands": [
+      "List(**)",
+      "WebFetch(domain:github.com)",
+      "WebSearch"
+    ],
+    "additionalDirectories": [
+      "d:\\storyapp"
+    ]
+  }
+}

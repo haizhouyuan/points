@@ -183,8 +183,8 @@ docker build --no-cache -t points:latest .
 
 ## 📚 相关文档
 
-- [Docker 部署指南](./docs/docker-deployment.md)
-- [CI/CD 配置说明](./docs/cicd-setup.md)
+- [部署指南](./docs/deployment-guide.md)
+- [CI/CD 配置说明](./docs/github-setup.md)
 - [环境配置文档](./docs/environment-setup.md)
 
 ## 🤝 贡献指南
