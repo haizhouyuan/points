@@ -55,6 +55,7 @@ docker build -t points:latest .
 docker run -d -p 5002:80 points:latest
 ```
 
+<<<<<<< HEAD
 ## Enhanced CI/CD Workflows (2025 Upgrade)
 
 ### Complete Pipeline Integration
@@ -88,6 +89,21 @@ docker-compose.ghcr.yml        # 生产镜像验证环境
 # 生产环境
 docker-compose.yml             # 标准生产配置
 ```
+=======
+## CI/CD Workflows
+
+### GitHub Actions Integration
+- **ci.yml**: PR质量检查和构建验证
+- **docker-build-push.yml**: Docker镜像构建和GHCR推送
+- **deploy-prod.yml**: 生产环境部署
+
+### Deployment Process
+1. **Code Push** → Main branch trigger
+2. **Docker Build** → Multi-stage build + security scan
+3. **GHCR Push** → Container registry publishing
+4. **Manual Deploy** → SSH-based production deployment
+5. **Health Check** → Container validation
+>>>>>>> origin/main
 
 ### Production Deployment
 ```bash

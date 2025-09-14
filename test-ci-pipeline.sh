@@ -80,7 +80,7 @@ info "Waiting for container to be ready..."
 sleep 10
 
 # 健康检查
-if curl -f http://localhost:3010 -o /dev/null -s; then
+if curl -f http://127.0.0.1:3010 -o /dev/null -s; then
     success "Container health check passed"
 else
     warning "Container health check failed, checking logs..."

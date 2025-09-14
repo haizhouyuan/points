@@ -22,7 +22,7 @@ services:
     restart: unless-stopped
     # 前端应用无特殊健康检查端点，可选配简单的HTTP检查
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1 || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
