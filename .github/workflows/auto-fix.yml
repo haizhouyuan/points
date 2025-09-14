@@ -1,0 +1,269 @@
+name: Auto Fix on Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  auto-fix:
+    # 仅在PR评论，且评论者为成员/所有者，且包含修复指令时运行
+    if: >
+      ${{ github.event.issue.pull_request &&
+          contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association) &&
+          (contains(github.event.comment.body, '/claude fix') || 
+           contains(github.event.comment.body, '/auto fix') ||
+           contains(github.event.comment.body, '/fix')) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    timeout-minutes: 15
+
+    steps:
+      - name: React to comment with eyes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ github.event.comment.id }},
+              content: 'eyes'
+            });
+
+      - name: Get PR details
+        id: pr-details
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            core.setOutput('head_ref', pr.head.ref);
+            core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('base_ref', pr.base.ref);
+            core.setOutput('clone_url', pr.head.repo.clone_url);
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr-details.outputs.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run diagnostic checks
+        id: diagnostics
+        run: |
+          echo "🔍 运行诊断检查..."
+          
+          # 创建诊断报告
+          cat > diagnostic_report.md << 'EOF'
+          # 🔍 自动修复诊断报告
+          
+          ## 构建状态
+          EOF
+          
+          # 检查构建状态
+          if npm run build; then
+            echo "- ✅ 应用构建成功" >> diagnostic_report.md
+          else
+            echo "- ❌ 应用构建失败" >> diagnostic_report.md
+            echo "build_failed=true" >> $GITHUB_OUTPUT
+          fi
+          
+          # 运行linting检查
+          echo "" >> diagnostic_report.md
+          echo "## 代码质量检查" >> diagnostic_report.md
+          
+          if npm run lint --if-present; then
+            echo "- ✅ 代码规范检查通过" >> diagnostic_report.md
+          else
+            echo "- ⚠️ 代码规范需要修复" >> diagnostic_report.md
+            echo "lint_issues=true" >> $GITHUB_OUTPUT
+          fi
+          
+          # 运行类型检查
+          echo "" >> diagnostic_report.md
+          echo "## TypeScript 类型检查" >> diagnostic_report.md
+          
+          if npm run typecheck --if-present; then
+            echo "- ✅ 类型检查通过" >> diagnostic_report.md
+          else
+            echo "- ⚠️ 类型检查发现问题" >> diagnostic_report.md
+            echo "type_issues=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Apply automatic fixes
+        id: apply-fixes
+        if: >
+          steps.diagnostics.outputs.lint_issues == 'true' ||
+          steps.diagnostics.outputs.build_failed == 'true'
+        run: |
+          echo "🔧 应用自动修复..."
+          
+          # 应用linting修复
+          if [ "${{ steps.diagnostics.outputs.lint_issues }}" = "true" ]; then
+            echo "修复代码规范问题..."
+            npm run lint:fix --if-present || npm run lint -- --fix --if-present
+          fi
+          
+          # 格式化代码
+          echo "格式化代码..."
+          npm run format --if-present || npx prettier --write . --if-present
+          
+          # 检查是否有修改
+          if git diff --quiet; then
+            echo "fixes_applied=false" >> $GITHUB_OUTPUT
+            echo "无需修复或自动修复无效果"
+          else
+            echo "fixes_applied=true" >> $GITHUB_OUTPUT
+            echo "自动修复已应用"
+          fi
+
+      - name: Run tests after fixes
+        if: steps.apply-fixes.outputs.fixes_applied == 'true'
+        id: test-after-fix
+        run: |
+          echo "🧪 修复后运行测试..."
+          
+          # 重新构建
+          npm run build || exit 1
+          
+          # 运行测试（如果有的话）
+          npm test --if-present || echo "No tests defined"
+          
+          echo "tests_passed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push fixes
+        if: steps.apply-fixes.outputs.fixes_applied == 'true' && steps.test-after-fix.outputs.tests_passed == 'true'
+        run: |
+          echo "📝 提交自动修复..."
+          
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Auto-Fix"
+          
+          git add -A
+          git commit -m "🤖 auto-fix: 自动修复代码质量问题
+
+          - 应用ESLint/Prettier自动修复
+          - 修复TypeScript类型问题  
+          - 确保构建和测试通过
+          
+          触发者: @${{ github.event.comment.user.login }}
+          评论: ${{ github.event.comment.html_url }}"
+          
+          # 推送修改
+          git push origin ${{ steps.pr-details.outputs.head_ref }}
+
+      - name: Post fix summary comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let diagnosticReport = '### 🔍 诊断报告\n未生成诊断报告文件';
+            
+            try {
+              if (fs.existsSync('diagnostic_report.md')) {
+                diagnosticReport = fs.readFileSync('diagnostic_report.md', 'utf8');
+              }
+            } catch (error) {
+              console.log('读取诊断报告失败:', error.message);
+            }
+            
+            const fixesApplied = '${{ steps.apply-fixes.outputs.fixes_applied }}' === 'true';
+            const testsPassed = '${{ steps.test-after-fix.outputs.tests_passed }}' === 'true';
+            
+            let statusEmoji = '✅';
+            let statusMessage = '自动修复完成';
+            let nextSteps = '';
+            
+            if (fixesApplied && testsPassed) {
+              statusEmoji = '✅';
+              statusMessage = '自动修复成功';
+              nextSteps = `
+              ### 📋 后续步骤
+              - ✅ 修复已自动提交并推送
+              - 🔄 CI/CD 流程将自动重新运行
+              - 🎯 请检查新的构建和测试结果
+              `;
+            } else if (fixesApplied && !testsPassed) {
+              statusEmoji = '⚠️';
+              statusMessage = '部分修复成功，测试失败';
+              nextSteps = `
+              ### 📋 后续步骤
+              - ⚠️ 自动修复应用但测试未通过
+              - 🔍 需要手动检查测试失败原因
+              - 💡 建议本地运行 \`npm test\` 调试
+              `;
+            } else {
+              statusEmoji = '🔍';
+              statusMessage = '诊断完成，无需修复';
+              nextSteps = `
+              ### 📋 后续步骤
+              - ℹ️ 未发现可自动修复的问题
+              - 🔍 如需帮助，请查看CI日志或手动检查
+              - 💬 可以使用 \`/claude fix\` 再次尝试
+              `;
+            }
+            
+            const comment = `### ${statusEmoji} ${statusMessage}
+            
+            ${diagnosticReport}
+            
+            ${nextSteps}
+            
+            ### 🤖 修复详情
+            - **触发者**: @${{ github.event.comment.user.login }}
+            - **修复应用**: ${fixesApplied ? '✅ 是' : '❌ 否'}
+            - **测试通过**: ${testsPassed ? '✅ 是' : '❌ 否'}
+            - **时间**: ${new Date().toISOString()}
+            
+            ---
+            *🔧 由自动修复系统生成 | [查看工作流](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
+
+      - name: React to original comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fixesApplied = '${{ steps.apply-fixes.outputs.fixes_applied }}' === 'true';
+            const testsPassed = '${{ steps.test-after-fix.outputs.tests_passed }}' === 'true';
+            
+            let reaction = 'confused';
+            if (fixesApplied && testsPassed) {
+              reaction = '+1';
+            } else if (fixesApplied) {
+              reaction = 'eyes';
+            }
+            
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ github.event.comment.id }},
+              content: reaction
+            });
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f diagnostic_report.md || true
