@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Button } from "./components/ui/button";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { Toaster } from "./components/ui/sonner";
 import { motion } from "motion/react";
 import { Sparkles } from "lucide-react";
@@ -32,13 +32,22 @@ import { RewardsSection } from "./components/RewardsSection";
 import { TaskHistorySection } from "./components/TaskHistorySection";
 import { HabitTrackerSection } from "./components/HabitTrackerSection";
 import { BusinessLogicService, ActivityTracker, CoreFlowValidator } from "./services/business-logic.service";
-import { navigationService, useNavigation, NAVIGATION_MAP } from "./services/navigation.service";
+import { navigationService, useNavigation, NAVIGATION_MAP, NavigationRecommendation } from "./services/navigation.service";
+
+// 🚀 Phase 2 高级功能集成
+import { AchievementService, DynamicAchievement, UserBehaviorProfile } from "./services/achievement.service";
+import AchievementCard from "./components/AchievementCard";
+import AchievementNotification from "./components/AchievementNotification";
+import LearningAnalyticsDashboard from "./components/LearningAnalyticsDashboard";
+import LearningPathPlanner from "./components/LearningPathPlanner";
+import LearningPathExecutor from "./components/LearningPathExecutor";
+import { ErrorBoundary, SectionErrorBoundary } from "./components/ErrorBoundary";
 
 export default function App() {
   // 🧭 智能导航系统 (Phase 1 集成)
   const navigation = useNavigation();
   const [currentTab, setCurrentTab] = useState('overview');
-  const [navigationRecommendation, setNavigationRecommendation] = useState<any>(null);
+  const [navigationRecommendation, setNavigationRecommendation] = useState<NavigationRecommendation | null>(null);
   
   // 专注学生体验 (移除角色切换)
   const [currentUser] = useState<"student">("student");
