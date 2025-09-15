@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Button } from "./components/ui/button";
 import { toast } from "sonner@2.0.3";
 import { Toaster } from "./components/ui/sonner";
 import { motion } from "motion/react";
-import { User, UserCheck, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { PointsHeader } from "./components/PointsHeader";
 import { RewardCard } from "./components/RewardCard";
@@ -27,8 +27,21 @@ import { FamilyCollaboration } from "./components/FamilyCollaboration";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { NotificationCenter } from "./components/NotificationCenter";
 
+// 🎯 Phase 1 业务逻辑集成
+import { RewardsSection } from "./components/RewardsSection";
+import { TaskHistorySection } from "./components/TaskHistorySection";
+import { HabitTrackerSection } from "./components/HabitTrackerSection";
+import { BusinessLogicService, ActivityTracker, CoreFlowValidator } from "./services/business-logic.service";
+import { navigationService, useNavigation, NAVIGATION_MAP } from "./services/navigation.service";
+
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<"student" | "parent">("student");
+  // 🧭 智能导航系统 (Phase 1 集成)
+  const navigation = useNavigation();
+  const [currentTab, setCurrentTab] = useState('overview');
+  const [navigationRecommendation, setNavigationRecommendation] = useState<any>(null);
+  
+  // 专注学生体验 (移除角色切换)
+  const [currentUser] = useState<"student">("student");
   
   // 学生数据
   const [studentData, setStudentData] = useState({
@@ -911,24 +924,107 @@ export default function App() {
   // 当前分析周期
   const [currentPeriod, setCurrentPeriod] = useState<'week' | 'month' | 'year'>('week');
 
-  // 处理任务完成（从任务规划页面）
+  // 🧭 智能导航处理函数
+  const handleTabChange = (newTab: string) => {
+    // 使用导航服务进行智能切换
+    const navigationResult = navigation.navigate(newTab as any, `用户主动切换到${newTab}页面`);
+    
+    setCurrentTab(newTab);
+    
+    // 显示导航建议（如果有的话）
+    if (navigationResult.guidance && !navigationResult.recommended) {
+      toast.info(`💡 导航提示`, {
+        description: navigationResult.guidance,
+        duration: 3000,
+      });
+    }
+    
+    // 更新导航推荐
+    const recommendation = navigation.getRecommendation();
+    setNavigationRecommendation(recommendation);
+  };
+
+  const handleSmartNavigation = (context: any) => {
+    const recommendation = navigation.getRecommendation(context);
+    
+    if (recommendation.confidence > 0.8) {
+      // 高置信度推荐，显示建议
+      toast.success(`🚀 建议下一步`, {
+        description: `${recommendation.reason}，前往${NAVIGATION_MAP[recommendation.recommended as any]?.title}`,
+        action: {
+          label: "前往",
+          onClick: () => handleTabChange(recommendation.recommended)
+        },
+        duration: 6000,
+      });
+    }
+  };
+
+  // 处理任务完成（从任务规划页面）- 使用业务逻辑服务
   const handleTaskCompletedFromPlanning = (task: any) => {
-    // 更新积分
+    // 使用业务逻辑服务计算积分
+    const taskData = {
+      id: task.id || `task_${Date.now()}`,
+      title: task.title || '学习任务',
+      description: task.description || '',
+      category: 'medium' as const, // 根据实际任务类型映射
+      estimatedMinutes: task.estimatedMinutes || 30,
+      difficulty: task.difficulty || 'medium' as const,
+      skillType: task.category || '学习'
+    };
+    
+    const pointsResult = BusinessLogicService.calculateTaskPoints(taskData, studentData.level);
+    
+    // 更新积分和经验值
     setStudentData(prev => ({
       ...prev,
-      currentPoints: prev.currentPoints + task.points
+      currentPoints: prev.currentPoints + pointsResult.points
+    }));
+    
+    setExperienceData(prev => ({
+      ...prev,
+      currentXP: prev.currentXP + pointsResult.xp,
+      dailyProgress: prev.dailyProgress + pointsResult.xp
     }));
 
-    // 添加到任务历史
-    const newHistoryItem = {
-      id: `history_${Date.now()}`,
-      title: task.title,
-      description: task.description,
-      points: task.points,
-      completedAt: new Date().toISOString(),
-      category: task.category
-    };
-    // 这里可以更新taskHistory状态，但由于它是只读的，我们只显示toast
+    // 记录用户活动 - 使用增强版追踪
+    ActivityTracker.trackEnhanced({
+      type: 'task_complete',
+      data: {
+        taskId: taskData.id,
+        title: taskData.title,
+        pointsEarned: pointsResult.points,
+        xpEarned: pointsResult.xp,
+        difficulty: taskData.difficulty,
+        category: taskData.category,
+        reasoning: pointsResult.reasoning,
+        estimatedMinutes: taskData.estimatedMinutes,
+        skillType: taskData.skillType
+      }
+    });
+
+    // 显示成功提示
+    toast.success(`🎉 任务完成！`, {
+      description: `获得 ${pointsResult.points} 积分, ${pointsResult.xp} 经验值`,
+      duration: 4000,
+    });
+
+    // 检查成就解锁
+    if (pointsResult.achievements && pointsResult.achievements.length > 0) {
+      pointsResult.achievements.forEach(achievement => {
+        toast.success(`🏆 解锁成就：${achievement}`, {
+          description: '前往成就页面查看详情',
+          duration: 6000,
+        });
+      });
+    }
+
+    // 智能导航推荐
+    handleSmartNavigation({
+      tasksCompleted: 1,
+      pointsEarned: pointsResult.points,
+      achievementUnlocked: pointsResult.achievements && pointsResult.achievements.length > 0
+    });
   };
 
   // 处理打卡奖励领取

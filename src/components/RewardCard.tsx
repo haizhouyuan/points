@@ -14,6 +14,7 @@ interface RewardCardProps {
   category: string;
   available: boolean;
   userPoints: number;
+  disabled?: boolean;
   onRedeem: (id: string) => void;
 }
 
@@ -26,10 +27,11 @@ export function RewardCard({
   category,
   available,
   userPoints,
+  disabled = false,
   onRedeem
 }: RewardCardProps) {
   const canAfford = userPoints >= cost;
-  const isAvailable = available && canAfford;
+  const isAvailable = available && canAfford && !disabled;
 
   return (
     <motion.div
@@ -99,7 +101,7 @@ export function RewardCard({
                 : "bg-gray-200 text-gray-500"
             }`}
           >
-            {!available ? "缺货中" : !canAfford ? "积分不足" : "立即兑换"}
+            {!available ? "缺货中" : !canAfford ? "积分不足" : disabled ? "兑换中..." : "立即兑换"}
           </Button>
         </CardFooter>
       </Card>
