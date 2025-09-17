@@ -37,6 +37,8 @@
 
 ## Security & Configuration Tips
 - Do not commit secrets. For runtime config, use Vite env vars with `VITE_` prefix (e.g., `.env.local`).
-- Validate external image sources and third‑party packages.
+- Validate external image sources and third-party packages.
 - Recommended Node 18+; dev server port is `3000` (configurable in `vite.config.ts`).
 
+## 交流约定
+- 回答用户问题时优先使用中文表述，并在必要时附上简要解释，确保沟通清晰易懂。
