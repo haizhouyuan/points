@@ -59,11 +59,36 @@ export class TaskService {
     return apiClient.get('/tasks/stats');
   }
 
-  async getUserTaskHistory(limit: number = 20): Promise<{
+  async getUserTaskHistory(
+    options?: number | {
+      limit?: number;
+      offset?: number;
+      userId?: string;
+      status?: TaskStatus;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+    }
+  ): Promise<{
     tasks: ScheduledTask[];
     totalPoints: number;
+    total?: number;
   }> {
-    return apiClient.get(`/tasks/history?limit=${limit}`);
+    const params = new URLSearchParams();
+
+    if (typeof options === 'number') {
+      params.set('limit', options.toString());
+    } else if (options) {
+      if (typeof options.limit === 'number') params.set('limit', options.limit.toString());
+      if (typeof options.offset === 'number') params.set('offset', options.offset.toString());
+      if (options.userId) params.set('userId', options.userId);
+      if (options.status) params.set('status', options.status);
+      if (options.sortBy) params.set('sortBy', options.sortBy);
+      if (options.sortOrder) params.set('sortOrder', options.sortOrder);
+    }
+
+    const query = params.toString();
+    const url = query ? `/tasks/history?${query}` : '/tasks/history';
+    return apiClient.get(url);
   }
 
   // Utility methods

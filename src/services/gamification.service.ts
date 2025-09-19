@@ -308,16 +308,22 @@ export class GamificationService {
   }
 
   calculateXPToNextLevel(currentXp: number, currentLevel: number): number {
-    // XP requirement formula: level^2 * 100 + level * 50
-    const nextLevelXp = Math.pow(currentLevel + 1, 2) * 100 + (currentLevel + 1) * 50;
-    const currentLevelXp = Math.pow(currentLevel, 2) * 100 + currentLevel * 50;
-    return nextLevelXp - currentXp;
+    const currentLevelXp = this.xpThresholdForLevel(currentLevel);
+    const nextLevelXp = this.xpThresholdForLevel(currentLevel + 1);
+    const xpWithinLevel = Math.max(0, currentXp - currentLevelXp);
+    const xpNeededForLevel = Math.max(0, nextLevelXp - currentLevelXp);
+    return Math.max(0, xpNeededForLevel - xpWithinLevel);
   }
 
   getProgressToNextLevel(currentXp: number, currentLevel: number): number {
-    const currentLevelXp = Math.pow(currentLevel, 2) * 100 + currentLevel * 50;
-    const nextLevelXp = Math.pow(currentLevel + 1, 2) * 100 + (currentLevel + 1) * 50;
-    const progress = (currentXp - currentLevelXp) / (nextLevelXp - currentLevelXp);
+    const currentLevelXp = this.xpThresholdForLevel(currentLevel);
+    const nextLevelXp = this.xpThresholdForLevel(currentLevel + 1);
+    const xpNeeded = nextLevelXp - currentLevelXp;
+    if (xpNeeded <= 0) {
+      return 100;
+    }
+
+    const progress = (currentXp - currentLevelXp) / xpNeeded;
     return Math.min(100, Math.max(0, Math.round(progress * 100)));
   }
 
@@ -371,6 +377,14 @@ export class GamificationService {
       overall: '⭐'
     };
     return icons[category as keyof typeof icons] || '📋';
+  }
+
+  private xpThresholdForLevel(level: number): number {
+    if (level <= 0) {
+      return 0;
+    }
+
+    return Math.pow(level, 2) * 100 + level * 50;
   }
 }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HabitTracker } from './HabitTracker';
-import { gamificationService } from '../services/gamification.service';
 import { pointsService } from '../services/points.service';
+import { authService } from '../services/auth.service';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -98,18 +98,34 @@ export function HabitTrackerSection({ onPointsUpdated }: HabitTrackerSectionProp
       // 计算奖励积分
       const pointsReward = milestone * 30; // 7天=210分，14天=420分，21天=630分
       
-      // 调用积分奖励API
-      await pointsService.addPoints({
-        points: pointsReward,
-        source: 'habit_milestone',
-        description: `${category}习惯 ${milestone}天里程碑`,
-        metadata: {
-          category,
-          milestone,
-          streakType: 'habit'
+      const cachedUser = authService.getCurrentUserSync();
+      let userId = cachedUser?._id || (cachedUser as any)?.id;
+
+      if (!userId && authService.isAuthenticated()) {
+        try {
+          const currentUser = await authService.getCurrentUser();
+          userId = currentUser?._id || (currentUser as any)?.id;
+        } catch (userError) {
+          console.warn('获取当前用户信息失败:', userError);
         }
+      }
+
+      if (!userId) {
+        toast.error('请登录后再领取习惯奖励');
+        return;
+      }
+
+      // 调用积分奖励API
+      await pointsService.awardPoints({
+        userId,
+        amount: pointsReward,
+        source: {
+          type: 'streak_bonus',
+          description: `${category}习惯 ${milestone}天里程碑`
+        },
+        notes: `Habit streak milestone: ${category} - ${milestone} days`
       });
-      
+
       toast.success(
         `🎉 恭喜达成${category} ${milestone}天里程碑！\n获得 ${pointsReward} 积分奖励！`,
         { duration: 4000 }

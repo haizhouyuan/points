@@ -23,26 +23,29 @@ interface TaskHistorySectionProps {
 export function TaskHistorySection({ limit = 20, showOnlyRecent = false }: TaskHistorySectionProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    loadTaskHistory();
-  }, [limit]);
+    void loadTaskHistory();
+  }, [limit, showOnlyRecent]);
 
   const loadTaskHistory = async () => {
     try {
       setLoading(true);
       
-      // Get current user info
-      const currentUser = authService.getCurrentUser();
-      const userId = currentUser?.id;
+      if (authService.isAuthenticated()) {
+        try {
+          await authService.getCurrentUser();
+        } catch (authError) {
+          console.warn('无法刷新当前用户信息，继续使用本地数据。', authError);
+        }
+      }
 
       // Fetch task history from API
-      const response = await taskService.getUserTaskHistory(
-        userId, 
-        showOnlyRecent ? Math.min(limit, 5) : limit,
-        0
-      );
+      const response = await taskService.getUserTaskHistory({
+        limit: showOnlyRecent ? Math.min(limit, 5) : limit,
+        offset: 0,
+        status: 'completed'
+      });
 
       // Transform API response to match TaskHistory component interface
       const transformedTasks: Task[] = response.tasks
@@ -63,7 +66,6 @@ export function TaskHistorySection({ limit = 20, showOnlyRecent = false }: TaskH
         });
 
       setTasks(transformedTasks);
-      setTotal(response.total);
     } catch (error: any) {
       console.error('加载任务历史失败:', error);
       

@@ -18,8 +18,9 @@ cp .env.example .env
 
 可选（Vite 前端运行时配置，需以 `VITE_` 前缀）：
 
-- `VITE_API_URL`：后端 API 地址，例如 `http://localhost:5000`。
+- `VITE_API_BASE_URL`：后端 API 地址，例如 `http://localhost:5000`。
 - `VITE_API_TIMEOUT`：请求超时时间，单位毫秒。
+- `VITE_ENABLE_ANALYTICS`：是否启用前端埋点（`true` / `false`）。
 
 ## 运行与预览
 
@@ -37,4 +38,3 @@ npx vite preview --port 3000
 
 - 不要在仓库中提交实际生产机密（Token/私钥/主机信息）。
 - 仅提交 `.env.example` 模板；真实 `.env` 保存在本地或安全的密钥管理中。
-
