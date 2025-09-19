@@ -40,3 +40,4 @@
 - Validate external image sources and third‑party packages.
 - Recommended Node 18+; dev server port is `3000` (configurable in `vite.config.ts`).
 
+用中文交流。
