@@ -6,6 +6,7 @@ on:
   pull_request:
     branches: [ main, master ]
   merge_group:
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '18.x'
@@ -13,11 +14,10 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # 快速检查作业：构建+代码质量检查
   quality-check:
     name: Quality Check & Build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,6 +27,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -39,12 +40,17 @@ jobs:
         run: npm run typecheck --if-present
         continue-on-error: true
 
+      - name: Run unit tests
+        run: npm run test:run -- --reporter=dot
+        env:
+          CI: true
+
       - name: Build application
         run: npm run build
 
       - name: Check build artifacts
         run: |
-          echo "📊 Build artifacts:" 
+          echo "📊 Build artifacts:"
           ls -la dist/ || ls -la build/ || echo "Build output directory not found"
           du -sh dist/ || du -sh build/ || echo "Could not calculate build size"
 
@@ -58,7 +64,6 @@ jobs:
             build/
           retention-days: 7
 
-  # Docker构建和推送作业
   docker-build:
     name: Docker Build & Push
     runs-on: ubuntu-latest
@@ -67,14 +72,20 @@ jobs:
     permissions:
       contents: read
       packages: write
-      
+      security-events: write
+
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
       image_digest: ${{ steps.build.outputs.digest }}
-      
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -108,7 +119,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
+
       - name: Generate build summary
         run: |
           echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
@@ -122,13 +133,71 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Registry:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
 
-  # 容器验证作业
+  security-scans:
+    name: Image Security & SBOM
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: needs.docker-build.result == 'success'
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+
+    steps:
+      - name: Prepare image reference
+        run: |
+          echo "IMAGE_REFERENCE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.docker-build.outputs.image_digest }}" >> $GITHUB_ENV
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Trivy vulnerability scan
+        id: trivy
+        uses: aquasecurity/trivy-action@v0.24.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.docker-build.outputs.image_digest }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+
+      - name: Upload Trivy report to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Generate SBOM (SPDX JSON)
+        id: sbom
+        uses: anchore/sbom-action@v0.17.3
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.docker-build.outputs.image_digest }}
+          format: spdx-json
+          output-file: sbom-spdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-spdx
+          path: sbom-spdx.json
+          retention-days: 7
+
+      - name: Record security summary
+        run: |
+          echo "## 🔐 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.docker-build.outputs.image_digest }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Trivy report uploaded to Security tab" >> $GITHUB_STEP_SUMMARY
+          echo "- SBOM artifact: sbom-spdx.json" >> $GITHUB_STEP_SUMMARY
+
   container-validation:
     name: Container Validation
     runs-on: ubuntu-latest
     needs: docker-build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -162,22 +231,19 @@ jobs:
       - name: Pull and validate container
         run: |
           echo "🚀 Starting container validation..."
-          
-          # 启动容器
+
           docker compose -f docker-compose.validation.yml up -d
-          
-          # 等待健康检查通过
+
           echo "⏳ Waiting for container to be healthy..."
           timeout 120 bash -c '
-            until docker compose -f docker-compose.validation.yml ps app | grep -q "healthy"; do 
+            until docker compose -f docker-compose.validation.yml ps app | grep -q "healthy"; do
               echo "Container not healthy yet..."
               docker compose -f docker-compose.validation.yml logs app --tail=5
               sleep 5
             done
             echo "✅ Container is healthy!"
           '
-          
-          # 验证应用响应
+
           echo "🔍 Testing application response..."
           if curl -f http://localhost:3001 -o /dev/null -s; then
             echo "✅ Application responds successfully"
@@ -186,31 +252,33 @@ jobs:
             docker compose -f docker-compose.validation.yml logs app
             exit 1
           fi
-          
-          # 清理
+
           docker compose -f docker-compose.validation.yml down -v
-          
+
           echo "🎉 Container validation completed successfully!"
 
-  # 汇总作业：收集所有测试结果
   pipeline-summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [quality-check, docker-build, container-validation]
+    needs:
+      - quality-check
+      - docker-build
+      - security-scans
+      - container-validation
     if: always()
-    
+
     steps:
       - name: Generate pipeline summary
         run: |
           echo "# 🚀 CI/CD Pipeline 结果汇总" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.quality-check.result }}" == "success" ]; then
             echo "✅ 代码质量检查: 通过" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ 代码质量检查: 失败" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.docker-build.result }}" == "success" ]; then
             echo "✅ Docker构建: 通过" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.docker-build.result }}" == "skipped" ]; then
@@ -218,7 +286,15 @@ jobs:
           else
             echo "❌ Docker构建: 失败" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
+          if [ "${{ needs.security-scans.result }}" == "success" ]; then
+            echo "✅ 安全扫描: 通过" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.security-scans.result }}" == "skipped" ]; then
+            echo "⏭️ 安全扫描: 跳过 (仅主分支)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ 安全扫描: 失败" >> $GITHUB_STEP_SUMMARY
+          fi
+
           if [ "${{ needs.container-validation.result }}" == "success" ]; then
             echo "✅ 容器验证: 通过" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.container-validation.result }}" == "skipped" ]; then
@@ -226,6 +302,6 @@ jobs:
           else
             echo "❌ 容器验证: 失败" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "详细构建报告请查看 Actions artifacts 和各作业日志。" >> $GITHUB_STEP_SUMMARY

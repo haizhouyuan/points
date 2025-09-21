@@ -11,11 +11,17 @@ vi.mock('react-hot-toast', () => ({
 }));
 
 // Mock motion/react
-vi.mock('motion/react', () => ({
-  motion: {
-    div: 'div',
-  },
-}));
+vi.mock('motion/react', () => {
+  const MotionDiv = ({ children, whileHover, whileTap, transition, ...rest }: any) => (
+    <div {...rest}>{children}</div>
+  );
+
+  return {
+    motion: {
+      div: MotionDiv,
+    },
+  };
+});
 
 // Mock the pointsService
 vi.mock('../services/points.service', () => ({
@@ -30,10 +36,14 @@ describe('RewardsSection', () => {
     global.fetch = vi.fn().mockRejectedValue(new Error('API not available'));
   });
 
-  it('renders loading state initially', () => {
+  it('renders loading state initially', async () => {
     render(<RewardsSection userPoints={1000} />);
-    
+
     expect(screen.getByText('加载奖励中...')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.queryByText('加载奖励中...')).not.toBeInTheDocument();
+    });
   });
 
   it('renders rewards after loading', async () => {
